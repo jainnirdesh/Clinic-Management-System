@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Clinic Management System</title>
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-clinic-medical"></i>
+                    <h2>HealthCare</h2>
+                </div>
+                <div class="user-info">
+                    <i class="fas fa-user-md"></i>
+                    <span id="doctorName">Dr. Smith</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="#" class="nav-link" data-tab="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="patients">
+                        <i class="fas fa-users"></i>
+                        Patients Queue
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="prescriptions">
+                        <i class="fas fa-prescription"></i>
+                        Prescriptions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="history">
+                        <i class="fas fa-history"></i>
+                        Patient History
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="profile">
+                        <i class="fas fa-user"></i>
+                        Profile
+                    </a>
+                </li>
+            </ul>
+            
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </button>
+        </nav>
+
+        <main class="main-content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                    <div class="date-time">
+                        <span id="currentDateTime"></span>
+                    </div>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="waitingPatients">0</h3>
+                            <p>Waiting Patients</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="completedToday">0</h3>
+                            <p>Completed Today</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-prescription-bottle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="prescriptionsToday">0</h3>
+                            <p>Prescriptions Today</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activities">
+                    <h2>Recent Activities</h2>
+                    <div id="recentActivities" class="activities-list">
+                        <!-- Activities will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patients Queue Tab -->
+            <div id="patients" class="tab-content">
+                <div class="page-header">
+                    <h1>Patients Queue</h1>
+                    <button class="btn btn-primary" onclick="refreshQueue()">
+                        <i class="fas fa-sync"></i>
+                        Refresh Queue
+                    </button>
+                </div>
+                
+                <div class="queue-container">
+                    <div class="queue-header">
+                        <h2>Current Queue</h2>
+                        <span class="queue-count">Total: <span id="queueCount">0</span></span>
+                    </div>
+                    
+                    <div id="patientsQueue" class="patients-list">
+                        <!-- Patient cards will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescriptions Tab -->
+            <div id="prescriptions" class="tab-content">
+                <div class="page-header">
+                    <h1>Create Prescription</h1>
+                </div>
+                
+                <div class="prescription-form">
+                    <form id="prescriptionForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="patientSelect">Select Patient</label>
+                                <select id="patientSelect" required>
+                                    <option value="">Select a patient...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="consultationDate">Consultation Date</label>
+                                <input type="date" id="consultationDate" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="symptoms">Symptoms</label>
+                            <textarea id="symptoms" placeholder="Describe patient symptoms..." required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="diagnosis">Diagnosis</label>
+                            <textarea id="diagnosis" placeholder="Enter diagnosis..." required></textarea>
+                        </div>
+                        
+                        <div class="medicines-section">
+                            <h3>Medicines</h3>
+                            <div id="medicinesContainer">
+                                <div class="medicine-row">
+                                    <input type="text" placeholder="Medicine name" class="medicine-name" required>
+                                    <input type="text" placeholder="Dosage" class="medicine-dosage" required>
+                                    <input type="text" placeholder="Frequency" class="medicine-frequency" required>
+                                    <input type="number" placeholder="Days" class="medicine-days" required>
+                                    <button type="button" class="btn btn-danger" onclick="removeMedicine(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addMedicine()">
+                                <i class="fas fa-plus"></i>
+                                Add Medicine
+                            </button>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="notes">Additional Notes</label>
+                            <textarea id="notes" placeholder="Additional instructions or notes..."></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                Save Prescription
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                                <i class="fas fa-times"></i>
+                                Clear Form
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Patient History Tab -->
+            <div id="history" class="tab-content">
+                <div class="page-header">
+                    <h1>Patient History</h1>
+                    <div class="search-container">
+                        <input type="text" id="historySearch" placeholder="Search patient by name or ID...">
+                        <button class="btn btn-primary" onclick="searchHistory()">
+                            <i class="fas fa-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="historyResults" class="history-container">
+                    <!-- History results will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profile" class="tab-content">
+                <div class="page-header">
+                    <h1>Doctor Profile</h1>
+                </div>
+                
+                <div class="profile-container">
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h2 id="profileName">Dr. Smith</h2>
+                                <p id="profileSpecialty">General Physician</p>
+                                <p id="profileEmail">doctor@clinic.com</p>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <span class="stat-label">Years of Experience</span>
+                                <span class="stat-value">10</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Patients Treated</span>
+                                <span class="stat-value" id="totalTreated">0</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Prescriptions Written</span>
+                                <span class="stat-value" id="totalPrescriptions">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Patient Details -->
+    <div id="patientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Patient Details</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="patientDetails">
+                    <!-- Patient details will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="startConsultation()">Start Consultation</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
+    
+    <script src="assets/js/doctor-dashboard.js"></script>
+    <script src="assets/js/auth.js"></script>
+</body>
+</html>

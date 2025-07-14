@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receptionist Dashboard - Clinic Management System</title>
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-clinic-medical"></i>
+                    <h2>HealthCare</h2>
+                </div>
+                <div class="user-info">
+                    <i class="fas fa-user-tie"></i>
+                    <span id="receptionistName">Receptionist</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="#" class="nav-link" data-tab="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="registration">
+                        <i class="fas fa-user-plus"></i>
+                        Patient Registration
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="tokens">
+                        <i class="fas fa-ticket-alt"></i>
+                        Token Management
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="billing">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        Billing
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="reports">
+                        <i class="fas fa-chart-bar"></i>
+                        Reports
+                    </a>
+                </li>
+            </ul>
+            
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </button>
+        </nav>
+
+        <main class="main-content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <div class="page-header">
+                    <h1>Receptionist Dashboard</h1>
+                    <div class="date-time">
+                        <span id="currentDateTime"></span>
+                    </div>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalPatientsToday">0</h3>
+                            <p>Patients Today</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="tokensGenerated">0</h3>
+                            <p>Tokens Generated</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="todayRevenue">₹0</h3>
+                            <p>Today's Revenue</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <h2>Quick Actions</h2>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="switchTab('registration')">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Register New Patient</span>
+                        </button>
+                        <button class="action-btn" onclick="generateToken()">
+                            <i class="fas fa-ticket-alt"></i>
+                            <span>Generate Token</span>
+                        </button>
+                        <button class="action-btn" onclick="switchTab('billing')">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Create Bill</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="recent-activities">
+                    <h2>Recent Activities</h2>
+                    <div id="recentActivities" class="activities-list">
+                        <!-- Activities will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Registration Tab -->
+            <div id="registration" class="tab-content">
+                <div class="page-header">
+                    <h1>Patient Registration</h1>
+                </div>
+                
+                <div class="registration-form">
+                    <form id="patientRegistrationForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="age">Age</label>
+                                <input type="number" id="age" min="1" max="120" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="gender">Gender</label>
+                                <select id="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="address">Address</label>
+                            <textarea id="address" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="emergencyContact">Emergency Contact</label>
+                                <input type="tel" id="emergencyContact" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="bloodGroup">Blood Group</label>
+                                <select id="bloodGroup">
+                                    <option value="">Select Blood Group</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="medicalHistory">Medical History</label>
+                            <textarea id="medicalHistory" rows="3" placeholder="Any known allergies, chronic conditions, or previous surgeries..."></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                Register Patient
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearRegistrationForm()">
+                                <i class="fas fa-times"></i>
+                                Clear Form
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Token Management Tab -->
+            <div id="tokens" class="tab-content">
+                <div class="page-header">
+                    <h1>Token Management</h1>
+                    <div class="token-actions">
+                        <button class="btn btn-primary" onclick="generateNewToken()">
+                            <i class="fas fa-plus"></i>
+                            Generate New Token
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetTokens()">
+                            <i class="fas fa-refresh"></i>
+                            Reset Daily Tokens
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="token-stats">
+                    <div class="token-stat">
+                        <h3>Current Token</h3>
+                        <div class="token-number" id="currentToken">1</div>
+                    </div>
+                    <div class="token-stat">
+                        <h3>Tokens Generated</h3>
+                        <div class="token-number" id="totalTokens">0</div>
+                    </div>
+                    <div class="token-stat">
+                        <h3>Tokens Served</h3>
+                        <div class="token-number" id="servedTokens">0</div>
+                    </div>
+                </div>
+                
+                <div class="token-generation">
+                    <h2>Generate Token</h2>
+                    <form id="tokenForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tokenPatient">Select Patient</label>
+                                <select id="tokenPatient" required>
+                                    <option value="">Select a patient...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="tokenDoctor">Select Doctor</label>
+                                <select id="tokenDoctor" required>
+                                    <option value="">Select a doctor...</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tokenType">Token Type</label>
+                                <select id="tokenType" required>
+                                    <option value="">Select type...</option>
+                                    <option value="consultation">Consultation</option>
+                                    <option value="follow-up">Follow-up</option>
+                                    <option value="emergency">Emergency</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="appointmentTime">Preferred Time</label>
+                                <input type="time" id="appointmentTime" name="appointmentTime">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tokenNotes">Notes (Optional)</label>
+                            <textarea id="tokenNotes" rows="2" placeholder="Any special notes or requirements..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-ticket-alt"></i>
+                            Generate Token
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="token-list">
+                    <h2>Today's Tokens</h2>
+                    <div id="tokensList" class="tokens-container">
+                        <!-- Tokens will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Tab -->
+            <div id="billing" class="tab-content">
+                <div class="page-header">
+                    <h1>Billing Management</h1>
+                </div>
+                
+                <div class="billing-form">
+                    <form id="billingForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="billPatient">Select Patient</label>
+                                <select id="billPatient" required>
+                                    <option value="">Select a patient...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="billDate">Bill Date</label>
+                                <input type="date" id="billDate" required>
+                            </div>
+                        </div>
+                        
+                        <div class="services-section">
+                            <h3>Services & Charges</h3>
+                            <div id="servicesContainer">
+                                <div class="service-row">
+                                    <input type="text" placeholder="Service/Item" class="service-name" required>
+                                    <input type="number" placeholder="Quantity" class="service-quantity" min="1" value="1" required>
+                                    <input type="number" placeholder="Rate" class="service-rate" min="0" step="0.01" required>
+                                    <input type="number" placeholder="Amount" class="service-amount" readonly>
+                                    <button type="button" class="btn btn-danger" onclick="removeService(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addService()">
+                                <i class="fas fa-plus"></i>
+                                Add Service
+                            </button>
+                        </div>
+                        
+                        <div class="bill-summary">
+                            <div class="summary-row">
+                                <span>Subtotal:</span>
+                                <span id="subtotal">₹0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Tax (18%):</span>
+                                <span id="tax">₹0.00</span>
+                            </div>
+                            <div class="summary-row total">
+                                <span>Total:</span>
+                                <span id="total">₹0.00</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-invoice"></i>
+                                Generate Bill
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearBillingForm()">
+                                <i class="fas fa-times"></i>
+                                Clear Form
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reports" class="tab-content">
+                <div class="page-header">
+                    <h1>Reports & Analytics</h1>
+                    <div class="report-filters">
+                        <input type="date" id="reportStartDate">
+                        <input type="date" id="reportEndDate">
+                        <button class="btn btn-primary" onclick="generateReport()">
+                            <i class="fas fa-chart-bar"></i>
+                            Generate Report
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="report-summary">
+                    <div class="report-card">
+                        <h3>Patient Statistics</h3>
+                        <div class="report-stat">
+                            <span>Total Patients:</span>
+                            <span id="reportTotalPatients">0</span>
+                        </div>
+                        <div class="report-stat">
+                            <span>New Patients:</span>
+                            <span id="reportNewPatients">0</span>
+                        </div>
+                        <div class="report-stat">
+                            <span>Follow-ups:</span>
+                            <span id="reportFollowUps">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h3>Revenue Statistics</h3>
+                        <div class="report-stat">
+                            <span>Total Revenue:</span>
+                            <span id="reportTotalRevenue">₹0</span>
+                        </div>
+                        <div class="report-stat">
+                            <span>Average Bill:</span>
+                            <span id="reportAvgBill">₹0</span>
+                        </div>
+                        <div class="report-stat">
+                            <span>Highest Bill:</span>
+                            <span id="reportHighestBill">₹0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="report-charts">
+                    <div class="chart-container">
+                        <h3>Daily Patient Count</h3>
+                        <canvas id="patientChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Revenue Trends</h3>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Token Print Modal -->
+    <div id="tokenModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Token Generated</h2>
+                <span class="close" onclick="closeTokenModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="tokenPrint" class="token-print">
+                    <!-- Token details will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="printToken()">
+                    <i class="fas fa-print"></i>
+                    Print Token
+                </button>
+                <button class="btn btn-secondary" onclick="closeTokenModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bill Print Modal -->
+    <div id="billModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Bill Generated</h2>
+                <span class="close" onclick="closeBillModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="billPrint" class="bill-print">
+                    <!-- Bill details will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="printBill()">
+                    <i class="fas fa-print"></i>
+                    Print Bill
+                </button>
+                <button class="btn btn-secondary" onclick="closeBillModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
+    
+    <script src="assets/js/receptionist-dashboard.js"></script>
+    <script src="assets/js/auth.js"></script>
+</body>
+</html>

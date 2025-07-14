@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Management System</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-clinic-medical"></i>
+                <h1>HealthCare Clinic</h1>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-tab="home">Home</button>
+                <button class="nav-btn" data-tab="login">Login</button>
+                <button class="nav-btn" data-tab="about">About</button>
+            </nav>
+        </header>
+
+        <main class="main">
+            <!-- Home Tab -->
+            <div id="home" class="tab-content active">
+                <div class="hero">
+                    <h2>Welcome to HealthCare Clinic Management System</h2>
+                    <p>Streamlining healthcare operations with digital efficiency</p>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <i class="fas fa-users"></i>
+                            <h3 id="totalPatients">0</h3>
+                            <p>Total Patients</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-user-md"></i>
+                            <h3 id="activeDoctors">2</h3>
+                            <p>Active Doctors</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-clipboard-list"></i>
+                            <h3 id="todayAppointments">0</h3>
+                            <p>Today's Appointments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Tab -->
+            <div id="login" class="tab-content">
+                <div class="auth-container">
+                    <!-- Auth Mode Tabs -->
+                    <div class="auth-mode-tabs">
+                        <button class="auth-mode-btn active" data-mode="login">Login</button>
+                        <button class="auth-mode-btn" data-mode="signup">Sign Up</button>
+                    </div>
+                    
+                    <!-- Login Form -->
+                    <div id="loginSection" class="auth-section active">
+                        <h2>Login to Your Account</h2>
+                        <div class="role-tabs">
+                            <button class="role-tab active" data-role="doctor">Doctor</button>
+                            <button class="role-tab" data-role="receptionist">Receptionist</button>
+                        </div>
+                        
+                        <form id="loginForm" class="auth-form">
+                            <div class="form-group">
+                                <label for="loginId" id="loginIdLabel">Doctor ID</label>
+                                <input type="text" id="loginId" name="loginId" placeholder="Enter your ID" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="loginPassword">Password</label>
+                                <input type="password" id="loginPassword" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </form>
+                        
+                        <div class="demo-credentials">
+                            <h3>Demo Credentials</h3>
+                            <p><strong>Doctor:</strong> DOC001 / password123</p>
+                            <p><strong>Receptionist:</strong> EMP001 / password123</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Sign Up Form -->
+                    <div id="signupSection" class="auth-section">
+                        <h2>Create New Account</h2>
+                        <div class="role-tabs">
+                            <button class="role-tab active" data-role="doctor">Doctor</button>
+                            <button class="role-tab" data-role="receptionist">Receptionist</button>
+                        </div>
+                        
+                        <form id="signupForm" class="auth-form">
+                            <div class="form-group">
+                                <label for="signupName">Full Name</label>
+                                <input type="text" id="signupName" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signupEmail">Email</label>
+                                <input type="email" id="signupEmail" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signupPassword">Password</label>
+                                <input type="password" id="signupPassword" name="password" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password</label>
+                                <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" required>
+                            </div>
+                            
+                            <!-- Doctor specific fields -->
+                            <div id="doctorFields" class="role-specific-fields">
+                                <div class="form-group">
+                                    <label for="doctorId">Doctor ID</label>
+                                    <input type="text" id="doctorId" name="doctorId" placeholder="Enter unique doctor ID (e.g., DOC001)">
+                                </div>
+                                <div class="form-group">
+                                    <label for="specialization">Specialization</label>
+                                    <select id="specialization" name="specialization">
+                                        <option value="">Select Specialization</option>
+                                        <option value="General Medicine">General Medicine</option>
+                                        <option value="Cardiology">Cardiology</option>
+                                        <option value="Dermatology">Dermatology</option>
+                                        <option value="Orthopedics">Orthopedics</option>
+                                        <option value="Pediatrics">Pediatrics</option>
+                                        <option value="Gynecology">Gynecology</option>
+                                        <option value="Neurology">Neurology</option>
+                                        <option value="Psychiatry">Psychiatry</option>
+                                        <option value="ENT">ENT</option>
+                                        <option value="Ophthalmology">Ophthalmology</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="licenseNumber">Medical License Number</label>
+                                    <input type="text" id="licenseNumber" name="licenseNumber" placeholder="Enter your medical license number">
+                                </div>
+                                <div class="form-group">
+                                    <label for="experience">Years of Experience</label>
+                                    <input type="number" id="experience" name="experience" min="0" max="50">
+                                </div>
+                            </div>
+                            
+                            <!-- Receptionist specific fields -->
+                            <div id="receptionistFields" class="role-specific-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="employeeId">Employee ID</label>
+                                    <input type="text" id="employeeId" name="employeeId" placeholder="Enter employee ID (e.g., EMP001)">
+                                </div>
+                                <div class="form-group">
+                                    <label for="department">Department</label>
+                                    <select id="department" name="department">
+                                        <option value="">Select Department</option>
+                                        <option value="Front Desk">Front Desk</option>
+                                        <option value="Registration">Registration</option>
+                                        <option value="Billing">Billing</option>
+                                        <option value="Administration">Administration</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="shift">Shift</label>
+                                    <select id="shift" name="shift">
+                                        <option value="">Select Shift</option>
+                                        <option value="Morning">Morning (8 AM - 4 PM)</option>
+                                        <option value="Evening">Evening (4 PM - 12 AM)</option>
+                                        <option value="Night">Night (12 AM - 8 AM)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Create Account</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Tab -->
+            <div id="about" class="tab-content">
+                <div class="about-content">
+                    <h2>About Clinic Management System</h2>
+                    <p>This system is designed to streamline clinic operations and improve patient care through digital transformation.</p>
+                    
+                    <div class="features">
+                        <div class="feature">
+                            <i class="fas fa-user-md"></i>
+                            <h3>Doctor Management</h3>
+                            <p>Complete patient records, prescription management, and consultation history</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-desk"></i>
+                            <h3>Receptionist Portal</h3>
+                            <p>Patient registration, token generation, and billing management</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-database"></i>
+                            <h3>Data Management</h3>
+                            <p>Secure patient data storage with comprehensive history tracking</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
+    
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/auth.js"></script>
+</body>
+</html>
