@@ -125,7 +125,7 @@ class ReceptionistDashboard {
 
     initializeUI() {
         // Initialize navigation
-        // this.setupNavigation(); // Temporarily disabled for debugging
+        this.setupNavigation();
         
         // Set today's date for forms
         const today = new Date().toISOString().split('T')[0];
@@ -161,39 +161,58 @@ class ReceptionistDashboard {
     }
 
     switchTab(tabName) {
+        console.log(`switchTab called with: ${tabName}`);
         try {
             // Remove active class from all nav items and tab contents
+            console.log('Removing active classes...');
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
             // Add active class to selected nav item and tab content
+            console.log(`Looking for nav link with data-tab="${tabName}"`);
             const navLink = document.querySelector(`[data-tab="${tabName}"]`);
+            console.log(`Looking for tab content with id="${tabName}"`);
             const tabContent = document.getElementById(tabName);
             
+            console.log('navLink found:', !!navLink);
+            console.log('tabContent found:', !!tabContent);
+            
             if (navLink && navLink.parentElement) {
+                console.log('Adding active class to nav item');
                 navLink.parentElement.classList.add('active');
             } else {
                 console.error(`Navigation link not found for tab: ${tabName}`);
             }
             
             if (tabContent) {
+                console.log('Adding active class to tab content');
                 tabContent.classList.add('active');
             } else {
                 console.error(`Tab content not found for tab: ${tabName}`);
             }
             
+            console.log('Tab switch completed, calling content-specific updates...');
+            
             // Update content based on tab
             switch(tabName) {
                 case 'tokens':
+                    console.log('Updating tokens list...');
                     this.updateTokensList();
                     break;
                 case 'reports':
+                    console.log('Initializing reports tab...');
                     this.initializeReportsTab();
                     break;
                 case 'payments':
+                    console.log('Loading payment history...');
                     this.loadPaymentHistory();
                     break;
+                default:
+                    console.log('No specific content update needed for tab:', tabName);
             }
+            
+            console.log('switchTab function completed successfully');
+            
         } catch (error) {
             console.error('Error switching tab:', error);
             this.showNotification('Error switching tab', 'error');
