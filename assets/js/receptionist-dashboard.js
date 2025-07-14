@@ -125,7 +125,7 @@ class ReceptionistDashboard {
 
     initializeUI() {
         // Initialize navigation
-        this.setupNavigation();
+        // this.setupNavigation(); // Temporarily disabled for debugging
         
         // Set today's date for forms
         const today = new Date().toISOString().split('T')[0];
@@ -614,48 +614,67 @@ class ReceptionistDashboard {
     }
 
     updateTokensList() {
-        const tokensList = document.getElementById('tokensList');
-        const today = new Date().toDateString();
-        const todayTokens = this.tokens.filter(t => 
-            new Date(t.date).toDateString() === today
-        );
-        
-        tokensList.innerHTML = '';
-        
-        todayTokens.forEach(token => {
-            const tokenCard = document.createElement('div');
-            tokenCard.className = `token-card ${token.status}`;
-            tokenCard.innerHTML = `
-                <div class="token-header">
-                    <span class="token-number">#${token.tokenNumber}</span>
-                    <span class="token-status">${token.status.toUpperCase()}</span>
-                </div>
-                <div class="token-details">
-                    <p><strong>Patient:</strong> ${token.patientName}</p>
-                    <p><strong>Doctor:</strong> ${token.doctorName || 'Not Assigned'}</p>
-                    <p><strong>Specialization:</strong> ${token.doctorSpecialization || 'N/A'}</p>
-                    <p><strong>Type:</strong> ${token.tokenType}</p>
-                    <p><strong>Time:</strong> ${new Date(token.date).toLocaleTimeString()}</p>
-                    ${token.appointmentTime ? `<p><strong>Preferred Time:</strong> ${token.appointmentTime}</p>` : ''}
-                    ${token.notes ? `<p><strong>Notes:</strong> ${token.notes}</p>` : ''}
-                    <p><strong>Fee:</strong> ₹${token.consultationFee || 500}</p>
-                </div>
-                <div class="token-actions">
-                    ${token.status === 'waiting' ? 
-                        `<button class="btn btn-sm btn-success" onclick="receptionistDashboard.markTokenServed('${token.id}')">
-                            <i class="fas fa-check"></i> Mark Served
-                        </button>` : ''
-                    }
-                    <button class="btn btn-sm btn-info" onclick="receptionistDashboard.createBillFromToken('${token.id}')">
-                        <i class="fas fa-file-invoice-dollar"></i> Create Bill
-                    </button>
-                    <button class="btn btn-sm btn-primary" onclick="receptionistDashboard.printToken('${token.id}')">
-                        <i class="fas fa-print"></i> Print
-                    </button>
-                </div>
-            `;
-            tokensList.appendChild(tokenCard);
-        });
+        try {
+            const tokensList = document.getElementById('tokensList');
+            if (!tokensList) {
+                console.error('tokensList element not found');
+                return;
+            }
+            
+            const today = new Date().toDateString();
+            const todayTokens = this.tokens.filter(t => 
+                new Date(t.date).toDateString() === today
+            );
+            
+            tokensList.innerHTML = '';
+            
+            if (todayTokens.length === 0) {
+                tokensList.innerHTML = '<p class="no-tokens">No tokens generated today</p>';
+                return;
+            }
+            
+            todayTokens.forEach(token => {
+                const tokenCard = document.createElement('div');
+                tokenCard.className = `token-card ${token.status}`;
+                tokenCard.innerHTML = `
+                    <div class="token-header">
+                        <span class="token-number">#${token.tokenNumber}</span>
+                        <span class="token-status">${token.status.toUpperCase()}</span>
+                    </div>
+                    <div class="token-details">
+                        <p><strong>Patient:</strong> ${token.patientName}</p>
+                        <p><strong>Doctor:</strong> ${token.doctorName || 'Not Assigned'}</p>
+                        <p><strong>Specialization:</strong> ${token.doctorSpecialization || 'N/A'}</p>
+                        <p><strong>Type:</strong> ${token.tokenType}</p>
+                        <p><strong>Time:</strong> ${new Date(token.date).toLocaleTimeString()}</p>
+                        ${token.appointmentTime ? `<p><strong>Preferred Time:</strong> ${token.appointmentTime}</p>` : ''}
+                        ${token.notes ? `<p><strong>Notes:</strong> ${token.notes}</p>` : ''}
+                        <p><strong>Fee:</strong> ₹${token.consultationFee || 500}</p>
+                    </div>
+                    <div class="token-actions">
+                        ${token.status === 'waiting' ? 
+                            `<button class="btn btn-sm btn-success" onclick="receptionistDashboard.markTokenServed('${token.id}')">
+                                <i class="fas fa-check"></i> Mark Served
+                            </button>` : ''
+                        }
+                        <button class="btn btn-sm btn-info" onclick="receptionistDashboard.createBillFromToken('${token.id}')">
+                            <i class="fas fa-file-invoice-dollar"></i> Create Bill
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="receptionistDashboard.printToken('${token.id}')">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                `;
+                tokensList.appendChild(tokenCard);
+            });
+        } catch (error) {
+            console.error('Error updating tokens list:', error);
+            // Don't redirect, just show error
+            const tokensList = document.getElementById('tokensList');
+            if (tokensList) {
+                tokensList.innerHTML = '<p class="error">Error loading tokens list</p>';
+            }
+        }
     }
 
     markTokenServed(tokenId) {
@@ -1225,12 +1244,15 @@ function switchTab(tabName) {
     console.log('receptionistDashboard exists:', !!receptionistDashboard);
     
     if (receptionistDashboard) {
+        console.log('About to call receptionistDashboard.switchTab');
         receptionistDashboard.switchTab(tabName);
+        console.log('switchTab completed');
     } else {
         console.error('Dashboard not initialized');
         // Try to initialize if not already done
         setTimeout(() => {
             if (receptionistDashboard) {
+                console.log('Retrying switchTab after timeout');
                 receptionistDashboard.switchTab(tabName);
             } else {
                 alert('Dashboard not ready. Please refresh the page.');
