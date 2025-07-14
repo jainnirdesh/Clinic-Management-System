@@ -1,37 +1,71 @@
 // Receptionist Dashboard JavaScript
 class ReceptionistDashboard {
     constructor() {
-        this.currentUser = null;
-        this.patients = [];
-        this.doctors = [];
-        this.tokens = [];
-        this.bills = [];
-        this.currentTokenNumber = 1;
-        this.init();
+        console.log('ReceptionistDashboard constructor called');
+        try {
+            this.currentUser = null;
+            this.patients = [];
+            this.doctors = [];
+            this.tokens = [];
+            this.bills = [];
+            this.payments = [];
+            this.currentTokenNumber = 1;
+            console.log('Starting initialization...');
+            this.init();
+            console.log('Initialization complete');
+        } catch (error) {
+            console.error('Error in constructor:', error);
+            // Set a basic working state
+            this.currentUser = { name: 'Demo Receptionist', employeeId: 'REC001' };
+            this.patients = [];
+            this.doctors = [];
+            this.tokens = [];
+            this.bills = [];
+            this.payments = [];
+            this.currentTokenNumber = 1;
+            
+            // Try basic initialization
+            try {
+                this.loadData();
+                this.initializeSampleData();
+                this.updateDashboardStats();
+            } catch (e) {
+                console.error('Basic initialization failed:', e);
+            }
+        }
     }
 
     init() {
+        console.log('1. Checking authentication...');
         // Check authentication
         this.checkAuth();
         
+        console.log('2. Loading data...');
         // Load data from localStorage
         this.loadData();
         
+        console.log('3. Initializing sample data...');
         // Initialize sample data if needed
         this.initializeSampleData();
         
+        console.log('4. Initializing UI...');
         // Initialize UI
         this.initializeUI();
         
+        console.log('5. Setting up event listeners...');
         // Set up event listeners
         this.setupEventListeners();
         
+        console.log('6. Updating dashboard stats...');
         // Update dashboard stats
         this.updateDashboardStats();
         
+        console.log('7. Setting up date/time...');
         // Update date/time
         this.updateDateTime();
         setInterval(() => this.updateDateTime(), 1000);
+        
+        console.log('Initialization completed successfully');
     }
 
     checkAuth() {
@@ -69,6 +103,9 @@ class ReceptionistDashboard {
         // Load bills
         this.bills = JSON.parse(localStorage.getItem('clinicBills') || '[]');
         
+        // Load notifications
+        this.notifications = JSON.parse(localStorage.getItem('clinicNotifications') || '[]');
+        
         // Load current token number
         this.currentTokenNumber = parseInt(localStorage.getItem('currentTokenNumber') || '1');
         
@@ -82,6 +119,7 @@ class ReceptionistDashboard {
         localStorage.setItem('clinicDoctors', JSON.stringify(this.doctors));
         localStorage.setItem('clinicTokens', JSON.stringify(this.tokens));
         localStorage.setItem('clinicBills', JSON.stringify(this.bills));
+        localStorage.setItem('clinicNotifications', JSON.stringify(this.notifications || []));
         localStorage.setItem('currentTokenNumber', this.currentTokenNumber.toString());
     }
 
@@ -103,6 +141,12 @@ class ReceptionistDashboard {
         
         // Initialize reports tab
         this.initializeReportsTab();
+        
+        // Initialize payment history
+        this.initializePaymentHistory();
+        
+        // Initialize notifications panel
+        this.updateNotificationPanel();
     }
 
     setupNavigation() {
@@ -117,22 +161,42 @@ class ReceptionistDashboard {
     }
 
     switchTab(tabName) {
-        // Remove active class from all nav items and tab contents
-        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        
-        // Add active class to selected nav item and tab content
-        document.querySelector(`[data-tab="${tabName}"]`).parentElement.classList.add('active');
-        document.getElementById(tabName).classList.add('active');
-        
-        // Update content based on tab
-        switch(tabName) {
-            case 'tokens':
-                this.updateTokensList();
-                break;
-            case 'reports':
-                this.initializeReportsTab();
-                break;
+        try {
+            // Remove active class from all nav items and tab contents
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to selected nav item and tab content
+            const navLink = document.querySelector(`[data-tab="${tabName}"]`);
+            const tabContent = document.getElementById(tabName);
+            
+            if (navLink && navLink.parentElement) {
+                navLink.parentElement.classList.add('active');
+            } else {
+                console.error(`Navigation link not found for tab: ${tabName}`);
+            }
+            
+            if (tabContent) {
+                tabContent.classList.add('active');
+            } else {
+                console.error(`Tab content not found for tab: ${tabName}`);
+            }
+            
+            // Update content based on tab
+            switch(tabName) {
+                case 'tokens':
+                    this.updateTokensList();
+                    break;
+                case 'reports':
+                    this.initializeReportsTab();
+                    break;
+                case 'payments':
+                    this.loadPaymentHistory();
+                    break;
+            }
+        } catch (error) {
+            console.error('Error switching tab:', error);
+            this.showNotification('Error switching tab', 'error');
         }
     }
 
@@ -201,6 +265,9 @@ class ReceptionistDashboard {
         document.getElementById('totalPatientsToday').textContent = todayPatients;
         document.getElementById('tokensGenerated').textContent = todayTokens;
         document.getElementById('todayRevenue').textContent = `₹${todayRevenue.toFixed(2)}`;
+        
+        // Update notification panel
+        this.updateNotificationPanel();
     }
 
     registerPatient() {
@@ -456,10 +523,84 @@ class ReceptionistDashboard {
         this.updateDashboardStats();
         this.addRecentActivity(`Generated token #${token.tokenNumber} for ${token.patientName} with ${token.doctorName}`, 'token');
         
+        // Send notification to patient
+        this.sendTokenNotification(token, patient);
+        
         this.showTokenModal(token);
         document.getElementById('tokenForm').reset();
     }
 
+    sendTokenNotification(token, patient) {
+        const appointmentTime = token.appointmentTime || 'Walk-in';
+        const message = `Dear ${patient.firstName}, your token #${token.tokenNumber} has been generated for consultation with ${token.doctorName} (${token.doctorSpecialization}). ${appointmentTime !== 'Walk-in' ? `Appointment time: ${appointmentTime}` : 'Please wait for your turn.'}. Fee: ₹${token.consultationFee}. Thank you!`;
+        
+        // Send email notification
+        if (patient.email) {
+            this.sendEmailNotification(patient.email, token, message);
+        }
+        
+        // Send SMS notification
+        if (patient.phone) {
+            this.sendSMSNotification(patient.phone, token, message);
+        }
+    }
+    
+    sendEmailNotification(email, token, message) {
+        // Simulate email sending (In real implementation, integrate with email service like SendGrid, Mailgun, etc.)
+        console.log('Sending email to:', email);
+        console.log('Email content:', message);
+        
+        // For demonstration, we'll show a notification
+        setTimeout(() => {
+            this.showNotification(`Email sent to ${email}`, 'success');
+        }, 1000);
+        
+        // Store notification record
+        this.addNotificationRecord('email', email, token, message);
+    }
+    
+    sendSMSNotification(phone, token, message) {
+        // Simulate SMS sending (In real implementation, integrate with SMS service like Twilio, AWS SNS, etc.)
+        console.log('Sending SMS to:', phone);
+        console.log('SMS content:', message);
+        
+        // For demonstration, we'll show a notification
+        setTimeout(() => {
+            this.showNotification(`SMS sent to ${phone}`, 'success');
+        }, 1500);
+        
+        // Store notification record
+        this.addNotificationRecord('sms', phone, token, message);
+    }
+    
+    addNotificationRecord(type, recipient, token, message) {
+        const notification = {
+            id: 'N' + Date.now().toString(),
+            type: type, // 'email' or 'sms'
+            recipient: recipient,
+            tokenId: token.id,
+            tokenNumber: token.tokenNumber,
+            patientName: token.patientName,
+            message: message,
+            timestamp: new Date().toISOString(),
+            status: 'sent'
+        };
+        
+        // Initialize notifications array if it doesn't exist
+        if (!this.notifications) {
+            this.notifications = [];
+        }
+        
+        this.notifications.push(notification);
+        this.saveData();
+        
+        // Update notification panel
+        this.updateNotificationPanel();
+        
+        // Add to recent activity
+        this.addRecentActivity(`${type.toUpperCase()} notification sent to ${token.patientName}`, 'notification');
+    }
+    
     updateTokenStats() {
         const today = new Date().toDateString();
         const todayTokens = this.tokens.filter(t => 
@@ -987,159 +1128,178 @@ class ReceptionistDashboard {
         });
     }
 
-    showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <div class="notification-content">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-                <span>${message}</span>
+    updateNotificationPanel() {
+        const notificationsList = document.getElementById('recentNotifications');
+        if (!notificationsList) return;
+        
+        // Initialize notifications array if it doesn't exist
+        if (!this.notifications) {
+            this.notifications = [];
+        }
+        
+        // Get recent notifications (last 10)
+        const recentNotifications = this.notifications
+            .slice(-10)
+            .reverse();
+        
+        if (recentNotifications.length === 0) {
+            notificationsList.innerHTML = '<div class="no-notifications">No recent notifications</div>';
+            return;
+        }
+        
+        notificationsList.innerHTML = recentNotifications.map(notification => `
+            <div class="notification-item">
+                <div class="notification-content">
+                    <div class="notification-type ${notification.type}">
+                        <i class="fas fa-${notification.type === 'email' ? 'envelope' : 'sms'}"></i>
+                        ${notification.type.toUpperCase()}
+                    </div>
+                    <div class="notification-message">${notification.message}</div>
+                    <div class="notification-recipient">To: ${notification.recipient}</div>
+                    <span class="notification-status ${notification.status}">${notification.status}</span>
+                </div>
+                <div class="notification-time">${new Date(notification.timestamp).toLocaleString()}</div>
             </div>
-            <button class="notification-close" onclick="this.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
+        `).join('');
+        
+        // Add notification stats
+        const emailCount = this.notifications.filter(n => n.type === 'email').length;
+        const smsCount = this.notifications.filter(n => n.type === 'sms').length;
+        const todayCount = this.notifications.filter(n => 
+            new Date(n.timestamp).toDateString() === new Date().toDateString()
+        ).length;
+        
+        const statsHtml = `
+            <div class="notification-stats">
+                <div class="notification-stat">
+                    <div class="notification-stat-value">${emailCount}</div>
+                    <div class="notification-stat-label">Emails</div>
+                </div>
+                <div class="notification-stat">
+                    <div class="notification-stat-value">${smsCount}</div>
+                    <div class="notification-stat-label">SMS</div>
+                </div>
+                <div class="notification-stat">
+                    <div class="notification-stat-value">${todayCount}</div>
+                    <div class="notification-stat-label">Today</div>
+                </div>
+            </div>
         `;
         
-        document.body.appendChild(notification);
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 5000);
+        notificationsList.innerHTML += statsHtml;
     }
 
     resetTokens() {
-        this.currentTokenNumber = 1;
-        this.tokens = [];
-        this.saveData();
-        this.updateTokenStats();
-        this.updateTokensList();
-        this.showNotification('Tokens reset successfully', 'success');
-    }
-
-    printToken(tokenId) {
-        const token = this.tokens.find(t => t.id === tokenId);
-        if (token) {
-            this.showTokenModal(token);
-        }
-    }
-
-    printBill(billId) {
-        const bill = this.bills.find(b => b.id === billId);
-        if (bill) {
-            this.showBillModal(bill);
-        }
-    }
-
-    getDoctorStats() {
-        const today = new Date().toDateString();
-        const todayTokens = this.tokens.filter(t => 
-            new Date(t.date).toDateString() === today
-        );
-        
-        const doctorStats = {};
-        
-        this.doctors.forEach(doctor => {
-            const doctorTokens = todayTokens.filter(t => t.doctorId === doctor.doctorId);
-            doctorStats[doctor.doctorId] = {
-                name: doctor.name,
-                specialization: doctor.specialization,
-                totalTokens: doctorTokens.length,
-                waitingTokens: doctorTokens.filter(t => t.status === 'waiting').length,
-                servedTokens: doctorTokens.filter(t => t.status === 'served').length,
-                revenue: doctorTokens.reduce((sum, token) => sum + (token.consultationFee || 500), 0)
-            };
-        });
-        
-        return doctorStats;
-    }
-
-    createBillFromToken(tokenId) {
-        const token = this.tokens.find(t => t.id === tokenId);
-        if (!token) {
-            this.showNotification('Token not found', 'error');
-            return;
-        }
-        
-        const patient = this.patients.find(p => p.id === token.patientId);
-        if (!patient) {
-            this.showNotification('Patient not found', 'error');
-            return;
-        }
-        
-        // Close the token modal
-        document.getElementById('tokenModal').style.display = 'none';
-        
-        // Switch to billing tab
-        this.switchTab('billing');
-        
-        // Auto-fill the billing form
-        setTimeout(() => {
-            // Select the patient
-            document.getElementById('billPatient').value = token.patientId;
+        // Confirm with user before resetting
+        if (confirm('Are you sure you want to reset today\'s tokens? This action cannot be undone.')) {
+            const today = new Date().toDateString();
             
-            // Set today's date
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('billDate').value = today;
+            // Remove today's tokens
+            this.tokens = this.tokens.filter(token => 
+                new Date(token.date).toDateString() !== today
+            );
             
-            // Clear existing services
-            document.getElementById('servicesContainer').innerHTML = '';
+            // Reset token counter to 1
+            this.currentTokenNumber = 1;
             
-            // Add consultation service automatically
-            this.addService();
-            const serviceRows = document.querySelectorAll('.service-row');
-            const lastRow = serviceRows[serviceRows.length - 1];
+            // Save data
+            this.saveData();
             
-            if (lastRow) {
-                lastRow.querySelector('.service-name').value = `${token.doctorSpecialization || 'General'} Consultation`;
-                lastRow.querySelector('.service-quantity').value = '1';
-                lastRow.querySelector('.service-rate').value = token.consultationFee || 500;
-                lastRow.querySelector('.service-amount').value = token.consultationFee || 500;
-            }
+            // Update UI
+            this.updateTokenStats();
+            this.updateTokensList();
+            this.updateDashboardStats();
             
-            // Calculate totals
-            this.calculateBillTotal();
+            // Add activity log
+            this.addRecentActivity('Reset today\'s tokens', 'system');
             
             // Show success message
-            this.showNotification('Billing form auto-filled with token details', 'success');
-        }, 100);
+            this.showNotification('Today\'s tokens have been reset successfully', 'success');
+        }
     }
 }
 
 // Global functions for HTML onclick events
 function switchTab(tabName) {
-    receptionistDashboard.switchTab(tabName);
+    console.log('switchTab called with:', tabName);
+    console.log('receptionistDashboard exists:', !!receptionistDashboard);
+    
+    if (receptionistDashboard) {
+        receptionistDashboard.switchTab(tabName);
+    } else {
+        console.error('Dashboard not initialized');
+        // Try to initialize if not already done
+        setTimeout(() => {
+            if (receptionistDashboard) {
+                receptionistDashboard.switchTab(tabName);
+            } else {
+                alert('Dashboard not ready. Please refresh the page.');
+            }
+        }, 100);
+    }
 }
 
 function generateToken() {
-    receptionistDashboard.generateToken();
+    if (receptionistDashboard) {
+        receptionistDashboard.generateToken();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
 }
 
 function clearRegistrationForm() {
-    receptionistDashboard.clearRegistrationForm();
+    if (receptionistDashboard) {
+        receptionistDashboard.clearRegistrationForm();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
 }
 
 function generateNewToken() {
-    receptionistDashboard.switchTab('tokens');
+    if (receptionistDashboard) {
+        receptionistDashboard.switchTab('tokens');
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
 }
 
 function resetTokens() {
-    receptionistDashboard.resetTokens();
+    if (receptionistDashboard) {
+        receptionistDashboard.resetTokens();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
 }
 
 function addService() {
-    receptionistDashboard.addService();
+    if (receptionistDashboard) {
+        receptionistDashboard.addService();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
 }
 
 function clearBillingForm() {
-    receptionistDashboard.clearBillingForm();
+    if (receptionistDashboard) {
+        receptionistDashboard.clearBillingForm();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
 }
 
 function generateReport() {
-    receptionistDashboard.generateReport();
+    if (receptionistDashboard) {
+        receptionistDashboard.generateReport();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
 }
 
 function closeTokenModal() {
@@ -1158,8 +1318,76 @@ function printBill() {
     window.print();
 }
 
+function updatePaymentStatus() {
+    if (receptionistDashboard) {
+        receptionistDashboard.updatePaymentStatus();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
+}
+
+function closePaymentModal() {
+    if (receptionistDashboard) {
+        receptionistDashboard.closePaymentModal();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
+}
+
+function filterPayments() {
+    if (receptionistDashboard) {
+        receptionistDashboard.filterPayments();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
+}
+
+function exportPaymentHistory() {
+    if (receptionistDashboard) {
+        receptionistDashboard.exportPaymentHistory();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
+}
+
+function sendPaymentReminder() {
+    if (receptionistDashboard) {
+        receptionistDashboard.sendPaymentReminder();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
+}
+
+function searchPayments() {
+    if (receptionistDashboard) {
+        receptionistDashboard.searchPayments();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
+}
+
 // Initialize dashboard when page loads
 let receptionistDashboard;
+let dashboardReady = false;
+
 document.addEventListener('DOMContentLoaded', function() {
-    receptionistDashboard = new ReceptionistDashboard();
+    try {
+        console.log('Initializing Receptionist Dashboard...');
+        receptionistDashboard = new ReceptionistDashboard();
+        dashboardReady = true;
+        console.log('Dashboard initialized successfully:', receptionistDashboard);
+        
+        // Make dashboard globally accessible for debugging
+        window.receptionistDashboard = receptionistDashboard;
+        
+    } catch (error) {
+        console.error('Error initializing dashboard:', error);
+        alert('Error initializing dashboard. Please refresh the page.');
+    }
 });

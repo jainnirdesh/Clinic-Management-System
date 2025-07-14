@@ -47,6 +47,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="payments">
+                        <i class="fas fa-credit-card"></i>
+                        Payment History
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="#" class="nav-link" data-tab="reports">
                         <i class="fas fa-chart-bar"></i>
                         Reports
@@ -122,6 +128,13 @@
                     <h2>Recent Activities</h2>
                     <div id="recentActivities" class="activities-list">
                         <!-- Activities will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="notifications-panel">
+                    <h2>Recent Notifications</h2>
+                    <div id="recentNotifications" class="notifications-list">
+                        <!-- Notifications will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -371,6 +384,85 @@
                 </div>
             </div>
 
+            <!-- Payment History Tab -->
+            <div id="payments" class="tab-content">
+                <div class="page-header">
+                    <h1>Payment History</h1>
+                    <div class="payment-filters">
+                        <div class="filter-group">
+                            <input type="text" id="paymentSearch" placeholder="Search by patient name, bill number, or amount...">
+                            <button class="btn btn-primary" onclick="searchPayments()">
+                                <i class="fas fa-search"></i>
+                                Search
+                            </button>
+                        </div>
+                        <div class="filter-group">
+                            <select id="paymentStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="paid">Paid</option>
+                                <option value="pending">Pending</option>
+                                <option value="overdue">Overdue</option>
+                            </select>
+                            <input type="date" id="paymentFromDate" placeholder="From Date">
+                            <input type="date" id="paymentToDate" placeholder="To Date">
+                            <button class="btn btn-secondary" onclick="filterPayments()">
+                                <i class="fas fa-filter"></i>
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="payment-summary">
+                    <div class="summary-card">
+                        <h3>Total Payments</h3>
+                        <div class="summary-value" id="totalPayments">₹0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Pending Payments</h3>
+                        <div class="summary-value pending" id="pendingPayments">₹0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Overdue Payments</h3>
+                        <div class="summary-value overdue" id="overduePayments">₹0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Collection Rate</h3>
+                        <div class="summary-value" id="collectionRate">0%</div>
+                    </div>
+                </div>
+                
+                <div class="payment-history-table">
+                    <table class="payments-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill No.</th>
+                                <th>Patient</th>
+                                <th>Amount</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentsTableBody">
+                            <!-- Payment records will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="payment-actions">
+                    <button class="btn btn-success" onclick="exportPaymentHistory()">
+                        <i class="fas fa-download"></i>
+                        Export to CSV
+                    </button>
+                    <button class="btn btn-primary" onclick="sendPaymentReminder()">
+                        <i class="fas fa-bell"></i>
+                        Send Payment Reminders
+                    </button>
+                </div>
+            </div>
+
             <!-- Reports Tab -->
             <div id="reports" class="tab-content">
                 <div class="page-header">
@@ -473,6 +565,25 @@
                     Print Bill
                 </button>
                 <button class="btn btn-secondary" onclick="closeBillModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Details Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Payment Details</h2>
+                <span class="close" onclick="closePaymentModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="paymentDetails">
+                    <!-- Payment details will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="updatePaymentStatus()">Update Status</button>
+                <button class="btn btn-secondary" onclick="closePaymentModal()">Close</button>
             </div>
         </div>
     </div>
