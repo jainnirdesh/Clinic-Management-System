@@ -715,7 +715,33 @@ html, body {
 .token-actions {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.token-actions .btn {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.token-actions .btn i {
+    font-size: 0.8rem;
+}
+
+.token-receipt .token-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #dee2e6;
+    justify-content: center;
+}
+
+.token-receipt .token-actions .btn {
+    padding: 10px 20px;
+    font-size: 0.9rem;
 }
 
 /* ============================================
@@ -786,17 +812,24 @@ html, body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    padding: 20px 0;
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: 5% auto;
+    margin: 0 auto;
     padding: 0;
     border: none;
     border-radius: 10px;
     width: 80%;
     max-width: 600px;
+    max-height: 90vh;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .modal-header {
@@ -805,6 +838,7 @@ html, body {
     padding: 20px;
     border-radius: 10px 10px 0 0;
     position: relative;
+    flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -826,12 +860,34 @@ html, body {
 
 .modal-body {
     padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .modal-footer {
     padding: 20px;
     border-top: 1px solid #ddd;
     text-align: right;
+    flex-shrink: 0;
 }
 
 .modal-footer .btn {
@@ -846,21 +902,25 @@ html, body {
     text-align: center;
     font-family: 'Courier New', monospace;
     border: 2px dashed #2c5aa0;
-    padding: 25px;
-    margin: 15px 0;
+    padding: 20px;
+    margin: 10px 0;
     background: #f8f9fa;
     border-radius: 8px;
+    font-size: 0.9em;
+    line-height: 1.3;
+    max-height: 60vh;
+    overflow-y: auto;
 }
 
 .token-receipt h2, .bill-receipt h2 {
     color: #2c5aa0;
     margin-bottom: 15px;
-    font-size: 1.5em;
+    font-size: 1.3em;
 }
 
 .token-receipt p, .bill-receipt p {
-    margin: 8px 0;
-    line-height: 1.4;
+    margin: 6px 0;
+    line-height: 1.3;
 }
 
 .token-receipt strong, .bill-receipt strong {
@@ -869,23 +929,31 @@ html, body {
 
 .token-receipt hr, .bill-receipt hr {
     border: 1px solid #2c5aa0;
-    margin: 15px 0;
+    margin: 12px 0;
 }
 
 .bill-table {
     width: 100%;
     border-collapse: collapse;
     margin: 10px 0;
+    font-size: 0.85em;
 }
 
 .bill-table th, .bill-table td {
     border: 1px solid #ddd;
-    padding: 8px;
+    padding: 6px;
     text-align: left;
 }
 
 .bill-table th {
     background-color: #f2f2f2;
+    font-weight: bold;
+    color: #2c5aa0;
+}
+
+.bill-table td:last-child,
+.bill-table th:last-child {
+    text-align: right;
 }
 
 /* ============================================

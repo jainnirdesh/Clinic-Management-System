@@ -17,6 +17,9 @@ class ReceptionistDashboard {
         // Load data from localStorage
         this.loadData();
         
+        // Initialize sample data if needed
+        this.initializeSampleData();
+        
         // Initialize UI
         this.initializeUI();
         
@@ -97,6 +100,9 @@ class ReceptionistDashboard {
         
         // Load recent activities
         this.loadRecentActivities();
+        
+        // Initialize reports tab
+        this.initializeReportsTab();
     }
 
     setupNavigation() {
@@ -125,7 +131,7 @@ class ReceptionistDashboard {
                 this.updateTokensList();
                 break;
             case 'reports':
-                this.generateReport();
+                this.initializeReportsTab();
                 break;
         }
     }
@@ -336,6 +342,47 @@ class ReceptionistDashboard {
         this.saveData();
     }
 
+    initializeSampleData() {
+        // Add sample patients if none exist
+        if (this.patients.length === 0) {
+            const samplePatients = [
+                {
+                    id: 'P001',
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    age: 35,
+                    gender: 'male',
+                    phone: '+1-555-0101',
+                    email: 'john.doe@email.com',
+                    address: '123 Main St, City',
+                    emergencyContact: '+1-555-0102',
+                    bloodGroup: 'B+',
+                    medicalHistory: 'No known allergies',
+                    registrationDate: new Date().toISOString(),
+                    registeredBy: this.currentUser.name
+                },
+                {
+                    id: 'P002',
+                    firstName: 'Jane',
+                    lastName: 'Smith',
+                    age: 28,
+                    gender: 'female',
+                    phone: '+1-555-0103',
+                    email: 'jane.smith@email.com',
+                    address: '456 Oak Ave, City',
+                    emergencyContact: '+1-555-0104',
+                    bloodGroup: 'A+',
+                    medicalHistory: 'Diabetes Type 2',
+                    registrationDate: new Date().toISOString(),
+                    registeredBy: this.currentUser.name
+                }
+            ];
+            
+            this.patients = samplePatients;
+            this.saveData();
+        }
+    }
+
     updateDoctorDropdowns() {
         const doctorSelect = document.getElementById('tokenDoctor');
         
@@ -455,11 +502,14 @@ class ReceptionistDashboard {
                 <div class="token-actions">
                     ${token.status === 'waiting' ? 
                         `<button class="btn btn-sm btn-success" onclick="receptionistDashboard.markTokenServed('${token.id}')">
-                            Mark Served
+                            <i class="fas fa-check"></i> Mark Served
                         </button>` : ''
                     }
+                    <button class="btn btn-sm btn-info" onclick="receptionistDashboard.createBillFromToken('${token.id}')">
+                        <i class="fas fa-file-invoice-dollar"></i> Create Bill
+                    </button>
                     <button class="btn btn-sm btn-primary" onclick="receptionistDashboard.printToken('${token.id}')">
-                        Print
+                        <i class="fas fa-print"></i> Print
                     </button>
                 </div>
             `;
@@ -499,6 +549,12 @@ class ReceptionistDashboard {
                 <hr>
                 <p><strong>Please wait for your turn</strong></p>
                 <p>Present this token to the doctor</p>
+                <div class="token-actions">
+                    <button class="btn btn-success" onclick="receptionistDashboard.createBillFromToken('${token.id}')">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        Create Bill
+                    </button>
+                </div>
             </div>
         `;
         
@@ -613,6 +669,39 @@ class ReceptionistDashboard {
         container.appendChild(serviceRow);
     }
 
+    addPredefinedService(serviceName, rate) {
+        const container = document.getElementById('servicesContainer');
+        const serviceRow = document.createElement('div');
+        serviceRow.className = 'service-row';
+        serviceRow.innerHTML = `
+            <input type="text" placeholder="Service/Item" class="service-name" value="${serviceName}" required>
+            <input type="number" placeholder="Quantity" class="service-quantity" min="1" value="1" required>
+            <input type="number" placeholder="Rate" class="service-rate" min="0" step="0.01" value="${rate}" required>
+            <input type="number" placeholder="Amount" class="service-amount" value="${rate}" readonly>
+            <button type="button" class="btn btn-danger" onclick="receptionistDashboard.removeService(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        container.appendChild(serviceRow);
+        
+        // Set up event listeners for the new row
+        const quantityInput = serviceRow.querySelector('.service-quantity');
+        const rateInput = serviceRow.querySelector('.service-rate');
+        const amountInput = serviceRow.querySelector('.service-amount');
+        
+        const updateAmount = () => {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const rate = parseFloat(rateInput.value) || 0;
+            amountInput.value = (quantity * rate).toFixed(2);
+            this.calculateBillTotal();
+        };
+        
+        quantityInput.addEventListener('input', updateAmount);
+        rateInput.addEventListener('input', updateAmount);
+        
+        this.calculateBillTotal();
+    }
+
     removeService(button) {
         button.closest('.service-row').remove();
         this.calculateBillTotal();
@@ -682,6 +771,61 @@ class ReceptionistDashboard {
         this.calculateBillTotal();
     }
 
+    initializeReportsTab() {
+        // Set default date range (last 7 days)
+        const today = new Date();
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        
+        const startDateInput = document.getElementById('reportStartDate');
+        const endDateInput = document.getElementById('reportEndDate');
+        
+        if (startDateInput && endDateInput) {
+            startDateInput.value = weekAgo.toISOString().split('T')[0];
+            endDateInput.value = today.toISOString().split('T')[0];
+        }
+        
+        // Generate default report
+        this.generateDefaultReport();
+    }
+
+    generateDefaultReport() {
+        const today = new Date();
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        
+        // Filter data for last 30 days
+        const reportPatients = this.patients.filter(p => {
+            const regDate = new Date(p.registrationDate);
+            return regDate >= monthAgo && regDate <= today;
+        });
+        
+        const reportBills = this.bills.filter(b => {
+            const billDate = new Date(b.date);
+            return billDate >= monthAgo && billDate <= today;
+        });
+        
+        const reportTokens = this.tokens.filter(t => {
+            const tokenDate = new Date(t.date);
+            return tokenDate >= monthAgo && tokenDate <= today;
+        });
+        
+        // Calculate statistics
+        const totalRevenue = reportBills.reduce((sum, bill) => sum + bill.total, 0);
+        const avgBill = reportBills.length > 0 ? totalRevenue / reportBills.length : 0;
+        const highestBill = reportBills.length > 0 ? Math.max(...reportBills.map(b => b.total)) : 0;
+        const followUps = reportTokens.filter(t => t.tokenType === 'follow-up').length;
+        
+        // Update report display
+        document.getElementById('reportTotalPatients').textContent = reportPatients.length;
+        document.getElementById('reportNewPatients').textContent = reportPatients.length;
+        document.getElementById('reportFollowUps').textContent = followUps;
+        document.getElementById('reportTotalRevenue').textContent = `₹${totalRevenue.toFixed(2)}`;
+        document.getElementById('reportAvgBill').textContent = `₹${avgBill.toFixed(2)}`;
+        document.getElementById('reportHighestBill').textContent = `₹${highestBill.toFixed(2)}`;
+        
+        // Generate charts if available
+        this.generateCharts(reportPatients, reportBills);
+    }
+
     generateReport() {
         const startDate = document.getElementById('reportStartDate').value;
         const endDate = document.getElementById('reportEndDate').value;
@@ -716,8 +860,11 @@ class ReceptionistDashboard {
         const highestBill = reportBills.length > 0 ? Math.max(...reportBills.map(b => b.total)) : 0;
         const followUps = reportTokens.filter(t => t.tokenType === 'follow-up').length;
         
+        // Total patients is all patients that have been registered
+        const totalPatientsEver = this.patients.length;
+        
         // Update report display
-        document.getElementById('reportTotalPatients').textContent = reportPatients.length;
+        document.getElementById('reportTotalPatients').textContent = totalPatientsEver;
         document.getElementById('reportNewPatients').textContent = reportPatients.length;
         document.getElementById('reportFollowUps').textContent = followUps;
         document.getElementById('reportTotalRevenue').textContent = `₹${totalRevenue.toFixed(2)}`;
@@ -909,6 +1056,57 @@ class ReceptionistDashboard {
         
         return doctorStats;
     }
+
+    createBillFromToken(tokenId) {
+        const token = this.tokens.find(t => t.id === tokenId);
+        if (!token) {
+            this.showNotification('Token not found', 'error');
+            return;
+        }
+        
+        const patient = this.patients.find(p => p.id === token.patientId);
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+        
+        // Close the token modal
+        document.getElementById('tokenModal').style.display = 'none';
+        
+        // Switch to billing tab
+        this.switchTab('billing');
+        
+        // Auto-fill the billing form
+        setTimeout(() => {
+            // Select the patient
+            document.getElementById('billPatient').value = token.patientId;
+            
+            // Set today's date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('billDate').value = today;
+            
+            // Clear existing services
+            document.getElementById('servicesContainer').innerHTML = '';
+            
+            // Add consultation service automatically
+            this.addService();
+            const serviceRows = document.querySelectorAll('.service-row');
+            const lastRow = serviceRows[serviceRows.length - 1];
+            
+            if (lastRow) {
+                lastRow.querySelector('.service-name').value = `${token.doctorSpecialization || 'General'} Consultation`;
+                lastRow.querySelector('.service-quantity').value = '1';
+                lastRow.querySelector('.service-rate').value = token.consultationFee || 500;
+                lastRow.querySelector('.service-amount').value = token.consultationFee || 500;
+            }
+            
+            // Calculate totals
+            this.calculateBillTotal();
+            
+            // Show success message
+            this.showNotification('Billing form auto-filled with token details', 'success');
+        }, 100);
+    }
 }
 
 // Global functions for HTML onclick events
@@ -934,10 +1132,6 @@ function resetTokens() {
 
 function addService() {
     receptionistDashboard.addService();
-}
-
-function removeService(button) {
-    receptionistDashboard.removeService(button);
 }
 
 function clearBillingForm() {
