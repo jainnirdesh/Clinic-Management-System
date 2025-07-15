@@ -130,9 +130,6 @@ class ReceptionistDashboard {
         // Initialize reports tab
         this.initializeReportsTab();
         
-        // Initialize payment history
-        this.initializePaymentHistory();
-        
         // Initialize notifications panel
         this.updateNotificationPanel();
     }
@@ -182,7 +179,8 @@ class ReceptionistDashboard {
                     this.initializeReportsTab();
                     break;
                 case 'payments':
-                    this.loadPaymentHistory();
+                    // Load payment history tab
+                    this.updateDashboardStats();
                     break;
             }
             
@@ -1255,6 +1253,109 @@ class ReceptionistDashboard {
                 notification.remove();
             }
         }, 5000);
+    }
+
+    createBillFromToken(tokenId) {
+        const token = this.tokens.find(t => t.id === tokenId);
+        if (!token) {
+            this.showNotification('Token not found', 'error');
+            return;
+        }
+
+        // Pre-fill billing form with token data
+        const patient = this.patients.find(p => p.id === token.patientId);
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        // Switch to billing tab
+        this.switchTab('billing');
+
+        // Fill the form
+        setTimeout(() => {
+            const patientSelect = document.getElementById('bill-patient');
+            const billDate = document.getElementById('bill-date');
+            
+            if (patientSelect) {
+                patientSelect.value = patient.id;
+            }
+            
+            if (billDate) {
+                billDate.value = new Date().toISOString().split('T')[0];
+            }
+
+            // Add consultation service based on token type
+            const serviceType = token.type === 'emergency' ? 'Emergency Consultation' : 
+                              token.type === 'regular' ? 'Regular Consultation' : 
+                              'Consultation';
+            
+            const serviceRate = token.type === 'emergency' ? 1000 : 500;
+            
+            // Add service to billing
+            this.addPredefinedService(serviceType, serviceRate);
+            
+            this.showNotification('Bill form pre-filled with token data', 'success');
+        }, 100);
+    }
+
+    printToken(tokenId) {
+        const token = this.tokens.find(t => t.id === tokenId);
+        if (!token) {
+            this.showNotification('Token not found', 'error');
+            return;
+        }
+
+        // Show token modal first
+        this.showTokenModal(token);
+        
+        // Print after a short delay
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    }
+
+    sendPaymentReminder() {
+        // Get the payment ID from the payment details modal
+        const paymentId = document.getElementById('payment-id')?.textContent;
+        if (!paymentId) {
+            this.showNotification('Please select a payment first', 'error');
+            return;
+        }
+
+        const payment = this.payments.find(p => p.id === paymentId);
+        if (!payment) {
+            this.showNotification('Payment not found', 'error');
+            return;
+        }
+
+        const patient = this.patients.find(p => p.id === payment.patientId);
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
+            return;
+        }
+
+        // Send reminder (simulated)
+        const reminderMessage = `Dear ${patient.name}, this is a reminder that your payment of ₹${payment.amount} is ${payment.status === 'pending' ? 'pending' : 'overdue'}. Please make payment at your earliest convenience.`;
+        
+        // Add notification record
+        this.addNotificationRecord('payment_reminder', patient.email || patient.phone, payment, reminderMessage);
+        
+        // Update payment with reminder sent
+        payment.lastReminderSent = new Date().toISOString();
+        payment.reminderCount = (payment.reminderCount || 0) + 1;
+        
+        // Save data
+        this.saveData();
+        
+        // Update dashboard stats
+        this.updateDashboardStats();
+        
+        // Show success message
+        this.showNotification(`Payment reminder sent to ${patient.name}`, 'success');
+        
+        // Close payment modal
+        this.closePaymentModal();
     }
 }
 
