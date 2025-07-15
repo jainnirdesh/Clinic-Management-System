@@ -440,6 +440,42 @@ class ReceptionistDashboard {
             this.saveData();
             this.updatePatientDropdowns();
         }
+        
+        // Initialize payments array if it doesn't exist
+        if (!this.payments) {
+            this.payments = [];
+        }
+        
+        // Create payment records for existing bills that don't have payment records
+        if (this.bills && this.bills.length > 0) {
+            this.bills.forEach(bill => {
+                // Check if payment record already exists for this bill
+                const existingPayment = this.payments.find(p => p.billId === bill.id);
+                
+                if (!existingPayment) {
+                    // Create payment record for this bill
+                    const payment = {
+                        id: 'P' + Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                        billId: bill.id,
+                        billNo: bill.billNumber,
+                        patientId: bill.patientId,
+                        amount: bill.total,
+                        status: 'pending',
+                        paymentMethod: 'Cash',
+                        date: bill.date,
+                        createdAt: bill.generatedAt || new Date().toISOString(),
+                        lastUpdated: bill.generatedAt || new Date().toISOString()
+                    };
+                    
+                    this.payments.push(payment);
+                }
+            });
+            
+            // Save the updated payments
+            if (this.payments.length > 0) {
+                this.saveData();
+            }
+        }
     }
 
     updateDoctorDropdowns() {
@@ -754,6 +790,28 @@ class ReceptionistDashboard {
         };
         
         this.bills.push(bill);
+        
+        // Create corresponding payment record
+        const payment = {
+            id: 'P' + Date.now().toString(),
+            billId: bill.id,
+            billNo: bill.billNumber,
+            patientId: patientId,
+            amount: total,
+            status: 'pending',
+            paymentMethod: 'Cash', // Default payment method
+            date: billDate,
+            createdAt: new Date().toISOString(),
+            lastUpdated: new Date().toISOString()
+        };
+        
+        // Initialize payments array if it doesn't exist
+        if (!this.payments) {
+            this.payments = [];
+        }
+        
+        this.payments.push(payment);
+        
         this.saveData();
         this.updateDashboardStats();
         this.addRecentActivity(`Generated bill ${bill.billNumber} for ${bill.patientName} - ₹${total.toFixed(2)}`, 'billing');
@@ -1335,7 +1393,7 @@ class ReceptionistDashboard {
         }
 
         // Send reminder (simulated)
-        const reminderMessage = `Dear ${patient.name}, this is a reminder that your payment of ₹${payment.amount} is ${payment.status === 'pending' ? 'pending' : 'overdue'}. Please make payment at your earliest convenience.`;
+        const reminderMessage = `Dear ${patient.firstName} ${patient.lastName}, this is a reminder that your payment of ₹${payment.amount} is ${payment.status === 'pending' ? 'pending' : 'overdue'}. Please make payment at your earliest convenience.`;
         
         // Add notification record
         this.addNotificationRecord('payment_reminder', patient.email || patient.phone, payment, reminderMessage);
@@ -1351,7 +1409,7 @@ class ReceptionistDashboard {
         this.updateDashboardStats();
         
         // Show success message
-        this.showNotification(`Payment reminder sent to ${patient.name}`, 'success');
+        this.showNotification(`Payment reminder sent to ${patient.firstName} ${patient.lastName}`, 'success');
         
         // Close payment modal
         this.closePaymentModal();
@@ -1484,7 +1542,7 @@ class ReceptionistDashboard {
             row.innerHTML = `
                 <td>${new Date(payment.date).toLocaleDateString()}</td>
                 <td>${payment.billNo}</td>
-                <td>${patient ? patient.name : 'Unknown Patient'}</td>
+                <td>${patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient'}</td>
                 <td>₹${payment.amount.toFixed(2)}</td>
                 <td>${payment.paymentMethod || 'Cash'}</td>
                 <td><span class="badge ${payment.status === 'paid' ? 'badge-success' : payment.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${payment.status}</span></td>
@@ -1511,7 +1569,7 @@ class ReceptionistDashboard {
         // Search through payments
         const filteredPayments = this.payments.filter(payment => {
             const patient = this.patients.find(p => p.id === payment.patientId);
-            const patientName = patient ? patient.name.toLowerCase() : '';
+            const patientName = patient ? `${patient.firstName} ${patient.lastName}`.toLowerCase() : '';
             const billNo = payment.billNo.toLowerCase();
             const paymentMethod = (payment.paymentMethod || '').toLowerCase();
             const status = payment.status.toLowerCase();
@@ -1544,7 +1602,7 @@ class ReceptionistDashboard {
                 csvData.push([
                     new Date(payment.date).toLocaleDateString(),
                     payment.billNo,
-                    patient ? patient.name : 'Unknown Patient',
+                    patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient',
                     payment.amount.toFixed(2),
                     payment.paymentMethod || 'Cash',
                     payment.status
@@ -1625,7 +1683,7 @@ class ReceptionistDashboard {
         
         // Add activity log
         const patient = this.patients.find(p => p.id === payment.patientId);
-        const patientName = patient ? patient.name : 'Unknown Patient';
+        const patientName = patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient';
         this.addRecentActivity(`Payment status updated: ${patientName} - ${oldStatus} → ${newStatus}`, 'payment');
         
         // Show success message
