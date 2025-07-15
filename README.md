@@ -34,7 +34,7 @@ A comprehensive clinic management system with separate dashboards for receptioni
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone <https://github.com/jainnirdesh/Clinic-Management-System>
 cd clinic-management-system
 ```
 
