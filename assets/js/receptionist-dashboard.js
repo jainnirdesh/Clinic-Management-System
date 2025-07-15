@@ -441,6 +441,7 @@ class ReceptionistDashboard {
             
             this.patients = samplePatients;
             this.saveData();
+            this.updatePatientDropdowns();
         }
     }
 
@@ -1229,6 +1230,31 @@ class ReceptionistDashboard {
             // Show success message
             this.showNotification('Today\'s tokens have been reset successfully', 'success');
         }
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+            <button class="notification-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
     }
 }
 
