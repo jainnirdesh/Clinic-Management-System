@@ -578,9 +578,9 @@ class ReceptionistDashboard {
         console.log('Sending email to:', email);
         console.log('Email content:', message);
         
-        // For demonstration, we'll show a notification
+        // For demonstration, we'll show a more realistic notification
         setTimeout(() => {
-            this.showNotification(`Email sent to ${email}`, 'success');
+            this.showNotification(`📧 Email notification sent to ${email} (Demo Mode - No actual email sent)`, 'info');
         }, 1000);
         
         // Store notification record
@@ -592,9 +592,9 @@ class ReceptionistDashboard {
         console.log('Sending SMS to:', phone);
         console.log('SMS content:', message);
         
-        // For demonstration, we'll show a notification
+        // For demonstration, we'll show a more realistic notification
         setTimeout(() => {
-            this.showNotification(`SMS sent to ${phone}`, 'success');
+            this.showNotification(`📱 SMS notification sent to ${phone} (Demo Mode - No actual SMS sent)`, 'info');
         }, 1500);
         
         // Store notification record
@@ -1694,6 +1694,82 @@ class ReceptionistDashboard {
         this.closePaymentModal();
     }
 
+    showPaymentDetails(paymentId) {
+        const payment = this.payments.find(p => p.id === paymentId);
+        if (!payment) {
+            this.showNotification('Payment not found', 'error');
+            return;
+        }
+
+        const patient = this.patients.find(p => p.id === payment.patientId);
+        const bill = this.bills.find(b => b.id === payment.billId);
+
+        // Create payment details modal
+        const modal = document.createElement('div');
+        modal.id = 'paymentModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Payment Details</h2>
+                    <span class="close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="payment-info">
+                        <div class="info-row">
+                            <span class="label">Payment ID:</span>
+                            <span class="value" id="payment-id">${payment.id}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Bill No:</span>
+                            <span class="value">${payment.billNo}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Patient:</span>
+                            <span class="value">${patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Amount:</span>
+                            <span class="value">₹${payment.amount.toFixed(2)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Payment Method:</span>
+                            <span class="value">${payment.paymentMethod}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Date:</span>
+                            <span class="value">${new Date(payment.date).toLocaleDateString()}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Status:</span>
+                            <span class="value">
+                                <select id="payment-status-select" class="form-control payment-status-select">
+                                    <option value="pending" ${payment.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="paid" ${payment.status === 'paid' ? 'selected' : ''}>Paid</option>
+                                    <option value="overdue" ${payment.status === 'overdue' ? 'selected' : ''}>Overdue</option>
+                                </select>
+                            </span>
+                        </div>
+                        ${payment.lastReminderSent ? `
+                            <div class="info-row">
+                                <span class="label">Last Reminder:</span>
+                                <span class="value">${new Date(payment.lastReminderSent).toLocaleDateString()}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="receptionistDashboard.updatePaymentStatus()">Update Status</button>
+                    <button class="btn btn-warning" onclick="receptionistDashboard.sendPaymentReminder()">Send Reminder</button>
+                    <button class="btn btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+    }
+
     // ...existing code...
 }
 
@@ -1841,6 +1917,15 @@ function sendPaymentReminder() {
 function searchPayments() {
     if (receptionistDashboard) {
         receptionistDashboard.searchPayments();
+    } else {
+        console.error('Dashboard not initialized');
+        alert('Dashboard not ready. Please try again.');
+    }
+}
+
+function showPaymentDetails(paymentId) {
+    if (receptionistDashboard) {
+        receptionistDashboard.showPaymentDetails(paymentId);
     } else {
         console.error('Dashboard not initialized');
         alert('Dashboard not ready. Please try again.');

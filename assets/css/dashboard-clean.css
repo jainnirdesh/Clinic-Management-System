@@ -1943,37 +1943,160 @@ html, body {
     flex: 1;
 }
 
-/* Responsive Design for Payment History */
+/* Payment Details Modal Specific Styles */
+.payment-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.payment-info .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.payment-info .info-row:last-child {
+    border-bottom: none;
+}
+
+.payment-info .info-row .label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.payment-info .info-row .value {
+    color: #2c5aa0;
+    font-weight: 500;
+    flex: 1;
+    text-align: right;
+}
+
+/* Status Dropdown Styling */
+.payment-info .info-row .value select {
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #495057;
+    min-width: 120px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.payment-info .info-row .value select:focus {
+    outline: none;
+    border-color: #2c5aa0;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+}
+
+.payment-info .info-row .value select:hover {
+    border-color: #2c5aa0;
+}
+
+/* Status-specific colors */
+.payment-info .info-row .value select option[value="pending"] {
+    color: #856404;
+}
+
+.payment-info .info-row .value select option[value="paid"] {
+    color: #155724;
+}
+
+.payment-info .info-row .value select option[value="overdue"] {
+    color: #721c24;
+}
+
+/* Payment ID styling */
+.payment-info .info-row .value#payment-id {
+    font-family: 'Courier New', monospace;
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* Modal Footer Button Spacing */
+.modal-footer .btn {
+    margin-left: 8px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modal-footer .btn:first-child {
+    margin-left: 0;
+}
+
+.modal-footer .btn-primary {
+    background: #2c5aa0;
+    border-color: #2c5aa0;
+    color: white;
+}
+
+.modal-footer .btn-primary:hover {
+    background: #1e3d72;
+    border-color: #1e3d72;
+}
+
+.modal-footer .btn-warning {
+    background: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.modal-footer .btn-warning:hover {
+    background: #e0a800;
+    border-color: #e0a800;
+}
+
+.modal-footer .btn-secondary {
+    background: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.modal-footer .btn-secondary:hover {
+    background: #5a6268;
+    border-color: #5a6268;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-    .payment-filters {
+    .payment-info .info-row {
         flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
     }
     
-    .filter-group {
-        flex-direction: column;
-        align-items: stretch;
+    .payment-info .info-row .label {
+        min-width: auto;
     }
     
-    .filter-group input,
-    .filter-group select {
+    .payment-info .info-row .value {
+        text-align: left;
         width: 100%;
     }
     
-    .payments-table {
-        font-size: 0.8em;
+    .payment-info .info-row .value select {
+        width: 100%;
+        max-width: 200px;
     }
     
-    .payments-table th,
-    .payments-table td {
-        padding: 8px;
+    .modal-footer {
+        text-align: center;
     }
     
-    .detail-row {
-        flex-direction: column;
-        gap: 5px;
-    }
-    
-    .payment-actions {
-        flex-direction: column;
+    .modal-footer .btn {
+        margin: 5px;
+        width: 100%;
+        max-width: 200px;
     }
 }
