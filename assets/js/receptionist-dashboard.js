@@ -1,7 +1,6 @@
 // Receptionist Dashboard JavaScript
 class ReceptionistDashboard {
     constructor() {
-        console.log('ReceptionistDashboard constructor called');
         try {
             this.currentUser = null;
             this.patients = [];
@@ -10,9 +9,7 @@ class ReceptionistDashboard {
             this.bills = [];
             this.payments = [];
             this.currentTokenNumber = 1;
-            console.log('Starting initialization...');
             this.init();
-            console.log('Initialization complete');
         } catch (error) {
             console.error('Error in constructor:', error);
             // Set a basic working state
@@ -36,36 +33,27 @@ class ReceptionistDashboard {
     }
 
     init() {
-        console.log('1. Checking authentication...');
         // Check authentication
         this.checkAuth();
         
-        console.log('2. Loading data...');
         // Load data from localStorage
         this.loadData();
         
-        console.log('3. Initializing sample data...');
         // Initialize sample data if needed
         this.initializeSampleData();
         
-        console.log('4. Initializing UI...');
         // Initialize UI
         this.initializeUI();
         
-        console.log('5. Setting up event listeners...');
         // Set up event listeners
         this.setupEventListeners();
         
-        console.log('6. Updating dashboard stats...');
         // Update dashboard stats
         this.updateDashboardStats();
         
-        console.log('7. Setting up date/time...');
         // Update date/time
         this.updateDateTime();
         setInterval(() => this.updateDateTime(), 1000);
-        
-        console.log('Initialization completed successfully');
     }
 
     checkAuth() {
@@ -161,57 +149,44 @@ class ReceptionistDashboard {
     }
 
     switchTab(tabName) {
-        console.log(`switchTab called with: ${tabName}`);
+        console.log(`Switching to tab: ${tabName}`);
         try {
             // Remove active class from all nav items and tab contents
-            console.log('Removing active classes...');
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
             // Add active class to selected nav item and tab content
-            console.log(`Looking for nav link with data-tab="${tabName}"`);
             const navLink = document.querySelector(`[data-tab="${tabName}"]`);
-            console.log(`Looking for tab content with id="${tabName}"`);
             const tabContent = document.getElementById(tabName);
             
-            console.log('navLink found:', !!navLink);
-            console.log('tabContent found:', !!tabContent);
-            
             if (navLink && navLink.parentElement) {
-                console.log('Adding active class to nav item');
                 navLink.parentElement.classList.add('active');
             } else {
                 console.error(`Navigation link not found for tab: ${tabName}`);
+                return;
             }
             
             if (tabContent) {
-                console.log('Adding active class to tab content');
                 tabContent.classList.add('active');
             } else {
                 console.error(`Tab content not found for tab: ${tabName}`);
+                return;
             }
-            
-            console.log('Tab switch completed, calling content-specific updates...');
             
             // Update content based on tab
             switch(tabName) {
                 case 'tokens':
-                    console.log('Updating tokens list...');
                     this.updateTokensList();
                     break;
                 case 'reports':
-                    console.log('Initializing reports tab...');
                     this.initializeReportsTab();
                     break;
                 case 'payments':
-                    console.log('Loading payment history...');
                     this.loadPaymentHistory();
                     break;
-                default:
-                    console.log('No specific content update needed for tab:', tabName);
             }
             
-            console.log('switchTab function completed successfully');
+            console.log(`Successfully switched to ${tabName} tab`);
             
         } catch (error) {
             console.error('Error switching tab:', error);
@@ -1259,19 +1234,13 @@ class ReceptionistDashboard {
 
 // Global functions for HTML onclick events
 function switchTab(tabName) {
-    console.log('switchTab called with:', tabName);
-    console.log('receptionistDashboard exists:', !!receptionistDashboard);
-    
     if (receptionistDashboard) {
-        console.log('About to call receptionistDashboard.switchTab');
         receptionistDashboard.switchTab(tabName);
-        console.log('switchTab completed');
     } else {
         console.error('Dashboard not initialized');
         // Try to initialize if not already done
         setTimeout(() => {
             if (receptionistDashboard) {
-                console.log('Retrying switchTab after timeout');
                 receptionistDashboard.switchTab(tabName);
             } else {
                 alert('Dashboard not ready. Please refresh the page.');
@@ -1419,10 +1388,8 @@ let dashboardReady = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        console.log('Initializing Receptionist Dashboard...');
         receptionistDashboard = new ReceptionistDashboard();
         dashboardReady = true;
-        console.log('Dashboard initialized successfully:', receptionistDashboard);
         
         // Make dashboard globally accessible for debugging
         window.receptionistDashboard = receptionistDashboard;
