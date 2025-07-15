@@ -179,8 +179,7 @@ class ReceptionistDashboard {
                     this.initializeReportsTab();
                     break;
                 case 'payments':
-                    // Load payment history tab
-                    this.updateDashboardStats();
+                    this.loadPaymentHistory();
                     break;
             }
             
@@ -1357,6 +1356,286 @@ class ReceptionistDashboard {
         // Close payment modal
         this.closePaymentModal();
     }
+
+    loadPaymentHistory() {
+        // Load payment history for the payments tab
+        try {
+            // Initialize payments array if it doesn't exist
+            if (!this.payments) {
+                this.payments = [];
+            }
+            
+            // Update payment statistics
+            this.updatePaymentStats();
+            
+            // Load payment table
+            this.loadPaymentTable();
+            
+            console.log('Payment history loaded successfully');
+        } catch (error) {
+            console.error('Error loading payment history:', error);
+            this.showNotification('Error loading payment history', 'error');
+        }
+    }
+
+    updatePaymentStats() {
+        // Calculate payment statistics
+        const totalPayments = this.payments.reduce((sum, payment) => sum + payment.amount, 0);
+        const pendingPayments = this.payments.filter(p => p.status === 'pending').reduce((sum, payment) => sum + payment.amount, 0);
+        const overduePayments = this.payments.filter(p => p.status === 'overdue').reduce((sum, payment) => sum + payment.amount, 0);
+        const collectionRate = totalPayments > 0 ? ((totalPayments - pendingPayments - overduePayments) / totalPayments * 100).toFixed(0) : 0;
+
+        // Update payment stats in UI
+        const statsElements = {
+            'totalPayments': `₹${totalPayments.toFixed(2)}`,
+            'pendingPayments': `₹${pendingPayments.toFixed(2)}`,
+            'overduePayments': `₹${overduePayments.toFixed(2)}`,
+            'collectionRate': `${collectionRate}%`
+        };
+
+        Object.entries(statsElements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+    }
+
+    loadPaymentTable() {
+        // Load payment table with existing payment data
+        const paymentTableBody = document.getElementById('paymentsTableBody');
+        if (!paymentTableBody) return;
+
+        paymentTableBody.innerHTML = '';
+
+        if (this.payments.length === 0) {
+            paymentTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No payment records found</td></tr>';
+            return;
+        }
+
+        this.payments.forEach(payment => {
+            const patient = this.patients.find(p => p.id === payment.patientId);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(payment.date).toLocaleDateString()}</td>
+                <td>${payment.billNo}</td>
+                <td>${patient ? patient.name : 'Unknown Patient'}</td>
+                <td>₹${payment.amount.toFixed(2)}</td>
+                <td>${payment.paymentMethod || 'Cash'}</td>
+                <td><span class="badge ${payment.status === 'paid' ? 'badge-success' : payment.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${payment.status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="showPaymentDetails('${payment.id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            paymentTableBody.appendChild(row);
+        });
+    }
+
+    filterPayments() {
+        // Get filter values
+        const statusFilter = document.getElementById('paymentStatusFilter')?.value || 'all';
+        const fromDate = document.getElementById('paymentFromDate')?.value;
+        const toDate = document.getElementById('paymentToDate')?.value;
+        
+        // Filter payments based on criteria
+        let filteredPayments = [...this.payments];
+        
+        // Filter by status
+        if (statusFilter !== 'all') {
+            filteredPayments = filteredPayments.filter(payment => payment.status === statusFilter);
+        }
+        
+        // Filter by date range
+        if (fromDate) {
+            filteredPayments = filteredPayments.filter(payment => 
+                new Date(payment.date) >= new Date(fromDate)
+            );
+        }
+        
+        if (toDate) {
+            filteredPayments = filteredPayments.filter(payment => 
+                new Date(payment.date) <= new Date(toDate)
+            );
+        }
+        
+        // Update the payment table with filtered results
+        this.displayFilteredPayments(filteredPayments);
+        
+        // Show notification about filter results
+        this.showNotification(`Found ${filteredPayments.length} payment(s) matching your criteria`, 'info');
+    }
+    
+    displayFilteredPayments(payments) {
+        const paymentTableBody = document.getElementById('paymentsTableBody');
+        if (!paymentTableBody) return;
+
+        paymentTableBody.innerHTML = '';
+
+        if (payments.length === 0) {
+            paymentTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No payments found matching the filter criteria</td></tr>';
+            return;
+        }
+
+        payments.forEach(payment => {
+            const patient = this.patients.find(p => p.id === payment.patientId);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(payment.date).toLocaleDateString()}</td>
+                <td>${payment.billNo}</td>
+                <td>${patient ? patient.name : 'Unknown Patient'}</td>
+                <td>₹${payment.amount.toFixed(2)}</td>
+                <td>${payment.paymentMethod || 'Cash'}</td>
+                <td><span class="badge ${payment.status === 'paid' ? 'badge-success' : payment.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${payment.status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="showPaymentDetails('${payment.id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            paymentTableBody.appendChild(row);
+        });
+    }
+
+    searchPayments() {
+        // Get search query
+        const searchQuery = document.getElementById('paymentSearch')?.value.toLowerCase().trim() || '';
+        
+        if (!searchQuery) {
+            // If no search query, show all payments
+            this.loadPaymentTable();
+            return;
+        }
+        
+        // Search through payments
+        const filteredPayments = this.payments.filter(payment => {
+            const patient = this.patients.find(p => p.id === payment.patientId);
+            const patientName = patient ? patient.name.toLowerCase() : '';
+            const billNo = payment.billNo.toLowerCase();
+            const paymentMethod = (payment.paymentMethod || '').toLowerCase();
+            const status = payment.status.toLowerCase();
+            
+            return patientName.includes(searchQuery) || 
+                   billNo.includes(searchQuery) || 
+                   paymentMethod.includes(searchQuery) || 
+                   status.includes(searchQuery);
+        });
+        
+        // Display filtered results
+        this.displayFilteredPayments(filteredPayments);
+        
+        // Show notification about search results
+        this.showNotification(`Found ${filteredPayments.length} payment(s) matching "${searchQuery}"`, 'info');
+    }
+    
+    exportPaymentHistory() {
+        try {
+            // Get current date for filename
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Prepare CSV data
+            const csvData = [];
+            csvData.push(['Date', 'Bill No.', 'Patient', 'Amount', 'Payment Method', 'Status']);
+            
+            // Add payment data
+            this.payments.forEach(payment => {
+                const patient = this.patients.find(p => p.id === payment.patientId);
+                csvData.push([
+                    new Date(payment.date).toLocaleDateString(),
+                    payment.billNo,
+                    patient ? patient.name : 'Unknown Patient',
+                    payment.amount.toFixed(2),
+                    payment.paymentMethod || 'Cash',
+                    payment.status
+                ]);
+            });
+            
+            // Convert to CSV string
+            const csvString = csvData.map(row => row.join(',')).join('\n');
+            
+            // Create and download file
+            const blob = new Blob([csvString], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `payment-history-${today}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            // Show success message
+            this.showNotification('Payment history exported successfully', 'success');
+            
+        } catch (error) {
+            console.error('Error exporting payment history:', error);
+            this.showNotification('Error exporting payment history', 'error');
+        }
+    }
+
+    closePaymentModal() {
+        // Close payment details modal
+        const paymentModal = document.getElementById('paymentModal');
+        if (paymentModal) {
+            paymentModal.style.display = 'none';
+        }
+        
+        // Clear any modal data
+        const paymentId = document.getElementById('payment-id');
+        if (paymentId) {
+            paymentId.textContent = '';
+        }
+    }
+
+    updatePaymentStatus() {
+        // Get the payment ID from the modal
+        const paymentId = document.getElementById('payment-id')?.textContent;
+        if (!paymentId) {
+            this.showNotification('Please select a payment first', 'error');
+            return;
+        }
+        
+        // Get the new status from the modal
+        const newStatus = document.getElementById('payment-status-select')?.value;
+        if (!newStatus) {
+            this.showNotification('Please select a status', 'error');
+            return;
+        }
+        
+        // Find and update the payment
+        const payment = this.payments.find(p => p.id === paymentId);
+        if (!payment) {
+            this.showNotification('Payment not found', 'error');
+            return;
+        }
+        
+        // Update payment status
+        const oldStatus = payment.status;
+        payment.status = newStatus;
+        payment.lastUpdated = new Date().toISOString();
+        
+        // Save data
+        this.saveData();
+        
+        // Update UI
+        this.loadPaymentTable();
+        this.updatePaymentStats();
+        this.updateDashboardStats();
+        
+        // Add activity log
+        const patient = this.patients.find(p => p.id === payment.patientId);
+        const patientName = patient ? patient.name : 'Unknown Patient';
+        this.addRecentActivity(`Payment status updated: ${patientName} - ${oldStatus} → ${newStatus}`, 'payment');
+        
+        // Show success message
+        this.showNotification(`Payment status updated to ${newStatus}`, 'success');
+        
+        // Close modal
+        this.closePaymentModal();
+    }
+
+    // ...existing code...
 }
 
 // Global functions for HTML onclick events
