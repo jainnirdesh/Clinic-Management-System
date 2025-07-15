@@ -1,0 +1,24 @@
+{
+  "name": "clinic-management-system",
+  "version": "1.0.0",
+  "description": "A comprehensive clinic management system with receptionist and doctor dashboards",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve -s .",
+    "build": "echo 'No build process needed for static site'",
+    "dev": "serve -s ."
+  },
+  "keywords": [
+    "clinic",
+    "management",
+    "healthcare",
+    "dashboard",
+    "receptionist",
+    "doctor"
+  ],
+  "author": "Clinic Management Team",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

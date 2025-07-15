@@ -348,11 +348,45 @@
                             </div>
                         </div>
                         
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentStatus">Payment Status</label>
+                                <select id="paymentStatus">
+                                    <option value="">Select payment status...</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="pending" selected>Pending</option>
+                                    <option value="overdue">Overdue</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dueDate">Due Date</label>
+                                <input type="date" id="dueDate" placeholder="Select due date">
+                            </div>
+                        </div>
+                        
                         <div class="services-section">
                             <h3>Services & Charges</h3>
                             <div id="servicesContainer">
                                 <div class="service-row">
-                                    <input type="text" placeholder="Service/Item" class="service-name" required>
+                                    <select class="service-select" required>
+                                        <option value="">Select Service/Item</option>
+                                        <option value="Consultation" data-rate="500">Consultation - ₹500</option>
+                                        <option value="Follow-up" data-rate="300">Follow-up - ₹300</option>
+                                        <option value="Emergency Consultation" data-rate="1000">Emergency Consultation - ₹1000</option>
+                                        <option value="Blood Test" data-rate="200">Blood Test - ₹200</option>
+                                        <option value="X-Ray" data-rate="400">X-Ray - ₹400</option>
+                                        <option value="ECG" data-rate="300">ECG - ₹300</option>
+                                        <option value="Ultrasound" data-rate="800">Ultrasound - ₹800</option>
+                                        <option value="MRI Scan" data-rate="3000">MRI Scan - ₹3000</option>
+                                        <option value="CT Scan" data-rate="2500">CT Scan - ₹2500</option>
+                                        <option value="Physiotherapy" data-rate="600">Physiotherapy - ₹600</option>
+                                        <option value="Vaccination" data-rate="150">Vaccination - ₹150</option>
+                                        <option value="Dental Checkup" data-rate="400">Dental Checkup - ₹400</option>
+                                        <option value="Dental Cleaning" data-rate="500">Dental Cleaning - ₹500</option>
+                                        <option value="Medicine" data-rate="0">Medicine - Custom Rate</option>
+                                        <option value="Custom" data-rate="0">Custom Service</option>
+                                    </select>
+                                    <input type="text" placeholder="Service/Item" class="service-name" style="display: none;" required>
                                     <input type="number" placeholder="Quantity" class="service-quantity" min="1" value="1" required>
                                     <input type="number" placeholder="Rate" class="service-rate" min="0" step="0.01" required>
                                     <input type="number" placeholder="Amount" class="service-amount" readonly>
@@ -603,11 +637,15 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
     <!-- Firebase SDKs -->
     <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
     
+    <script src="assets/js/notification-service.js"></script>
     <script src="assets/js/receptionist-dashboard.js"></script>
     <script src="assets/js/auth.js"></script>
 </body>

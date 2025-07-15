@@ -9,6 +9,8 @@ class ReceptionistDashboard {
             this.bills = [];
             this.payments = [];
             this.currentTokenNumber = 1;
+            this.patientChart = null;
+            this.revenueChart = null;
             this.init();
         } catch (error) {
             console.error('Error in constructor:', error);
@@ -20,6 +22,8 @@ class ReceptionistDashboard {
             this.bills = [];
             this.payments = [];
             this.currentTokenNumber = 1;
+            this.patientChart = null;
+            this.revenueChart = null;
             
             // Try basic initialization
             try {
@@ -91,6 +95,10 @@ class ReceptionistDashboard {
         // Load bills
         this.bills = JSON.parse(localStorage.getItem('clinicBills') || '[]');
         
+        // Load payments
+        this.payments = JSON.parse(localStorage.getItem('clinicPayments') || '[]');
+        console.log('Loaded payments from localStorage:', this.payments.length);
+        
         // Load notifications
         this.notifications = JSON.parse(localStorage.getItem('clinicNotifications') || '[]');
         
@@ -107,6 +115,7 @@ class ReceptionistDashboard {
         localStorage.setItem('clinicDoctors', JSON.stringify(this.doctors));
         localStorage.setItem('clinicTokens', JSON.stringify(this.tokens));
         localStorage.setItem('clinicBills', JSON.stringify(this.bills));
+        localStorage.setItem('clinicPayments', JSON.stringify(this.payments || []));
         localStorage.setItem('clinicNotifications', JSON.stringify(this.notifications || []));
         localStorage.setItem('currentTokenNumber', this.currentTokenNumber.toString());
     }
@@ -120,6 +129,14 @@ class ReceptionistDashboard {
         document.getElementById('billDate').value = today;
         document.getElementById('reportStartDate').value = today;
         document.getElementById('reportEndDate').value = today;
+        
+        // Set default due date to 30 days from today
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 30);
+        const dueDateInput = document.getElementById('dueDate');
+        if (dueDateInput) {
+            dueDateInput.value = dueDate.toISOString().split('T')[0];
+        }
         
         // Update token stats
         this.updateTokenStats();
@@ -214,6 +231,15 @@ class ReceptionistDashboard {
         document.addEventListener('input', (e) => {
             if (e.target.classList.contains('service-quantity') || e.target.classList.contains('service-rate')) {
                 this.calculateServiceAmount(e.target);
+            }
+        });
+
+        // Service dropdown change handler
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('service-select')) {
+                this.handleServiceSelection(e.target);
+            } else if (e.target.id === 'paymentStatus') {
+                this.handlePaymentStatusChange(e.target);
             }
         });
 
@@ -448,6 +474,8 @@ class ReceptionistDashboard {
         
         // Create payment records for existing bills that don't have payment records
         if (this.bills && this.bills.length > 0) {
+            let paymentsAdded = false;
+            
             this.bills.forEach(bill => {
                 // Check if payment record already exists for this bill
                 const existingPayment = this.payments.find(p => p.billId === bill.id);
@@ -460,19 +488,21 @@ class ReceptionistDashboard {
                         billNo: bill.billNumber,
                         patientId: bill.patientId,
                         amount: bill.total,
-                        status: 'pending',
+                        status: bill.paymentStatus || 'pending', // Use bill's payment status if available
                         paymentMethod: 'Cash',
                         date: bill.date,
+                        dueDate: bill.dueDate || bill.date,
                         createdAt: bill.generatedAt || new Date().toISOString(),
                         lastUpdated: bill.generatedAt || new Date().toISOString()
                     };
                     
                     this.payments.push(payment);
+                    paymentsAdded = true;
                 }
             });
             
-            // Save the updated payments
-            if (this.payments.length > 0) {
+            // Save the updated payments only if new ones were added
+            if (paymentsAdded) {
                 this.saveData();
             }
         }
@@ -558,18 +588,47 @@ class ReceptionistDashboard {
         document.getElementById('tokenForm').reset();
     }
 
-    sendTokenNotification(token, patient) {
-        const appointmentTime = token.appointmentTime || 'Walk-in';
-        const message = `Dear ${patient.firstName}, your token #${token.tokenNumber} has been generated for consultation with ${token.doctorName} (${token.doctorSpecialization}). ${appointmentTime !== 'Walk-in' ? `Appointment time: ${appointmentTime}` : 'Please wait for your turn.'}. Fee: ₹${token.consultationFee}. Thank you!`;
-        
-        // Send email notification
-        if (patient.email) {
-            this.sendEmailNotification(patient.email, token, message);
-        }
-        
-        // Send SMS notification
-        if (patient.phone) {
-            this.sendSMSNotification(patient.phone, token, message);
+    async sendTokenNotification(token, patient) {
+        try {
+            // Use the real notification service
+            const results = await notificationService.sendTokenNotification(patient, token);
+            
+            // Show results to user
+            if (results.email) {
+                if (results.email.success) {
+                    this.showNotification(`📧 Email sent successfully to ${patient.email}`, 'success');
+                } else if (results.email.demo) {
+                    this.showNotification(`📧 Email notification (Demo Mode) - ${patient.email}`, 'info');
+                } else {
+                    this.showNotification(`📧 Email failed: ${results.email.error}`, 'error');
+                }
+            }
+            
+            if (results.sms) {
+                if (results.sms.success) {
+                    if (results.sms.method === 'WhatsApp Web') {
+                        this.showNotification(`📱 WhatsApp message opened for ${patient.phone}`, 'success');
+                    } else {
+                        this.showNotification(`📱 SMS sent successfully to ${patient.phone}`, 'success');
+                    }
+                } else if (results.sms.demo) {
+                    this.showNotification(`📱 SMS notification (Demo Mode) - ${patient.phone}`, 'info');
+                } else {
+                    this.showNotification(`📱 SMS failed: ${results.sms.error}`, 'error');
+                }
+            }
+            
+            // Store notification records
+            if (results.email) {
+                this.addNotificationRecord('email', patient.email, token, `Token notification sent via email`);
+            }
+            if (results.sms) {
+                this.addNotificationRecord('sms', patient.phone, token, `Token notification sent via SMS`);
+            }
+            
+        } catch (error) {
+            console.error('Error sending notifications:', error);
+            this.showNotification('Error sending notifications', 'error');
         }
     }
     
@@ -753,9 +812,11 @@ class ReceptionistDashboard {
         const patientId = document.getElementById('billPatient').value;
         const billDate = document.getElementById('billDate').value;
         const paymentMethod = document.getElementById('paymentMethod').value;
+        const paymentStatus = document.getElementById('paymentStatus').value || 'pending';
+        const dueDate = document.getElementById('dueDate').value;
         
         if (!patientId || !billDate || !paymentMethod) {
-            this.showNotification('Please select patient, bill date, and payment method', 'error');
+            this.showNotification('Please fill in all required fields (patient, date, and payment method)', 'error');
             return;
         }
         
@@ -782,10 +843,12 @@ class ReceptionistDashboard {
             patientId: patientId,
             patientName: `${patient.firstName} ${patient.lastName}`,
             date: billDate,
+            dueDate: dueDate || billDate,
             services: services,
             subtotal: subtotal,
             tax: tax,
             total: total,
+            paymentStatus: paymentStatus,
             generatedBy: this.currentUser.name,
             generatedAt: new Date().toISOString()
         };
@@ -799,9 +862,10 @@ class ReceptionistDashboard {
             billNo: bill.billNumber,
             patientId: patientId,
             amount: total,
-            status: 'pending',
+            status: paymentStatus,
             paymentMethod: paymentMethod,
             date: billDate,
+            dueDate: dueDate || billDate,
             createdAt: new Date().toISOString(),
             lastUpdated: new Date().toISOString()
         };
@@ -815,10 +879,44 @@ class ReceptionistDashboard {
         
         this.saveData();
         this.updateDashboardStats();
-        this.addRecentActivity(`Generated bill ${bill.billNumber} for ${bill.patientName} - ₹${total.toFixed(2)}`, 'billing');
+        this.addRecentActivity(`Generated bill ${bill.billNumber} for ${bill.patientName} - ₹${total.toFixed(2)} (${paymentStatus})`, 'billing');
+        
+        // Send bill notification
+        this.sendBillNotification(bill, patient);
         
         this.showBillModal(bill);
         this.clearBillingForm();
+    }
+
+    async sendBillNotification(bill, patient) {
+        try {
+            // Use the real notification service
+            const results = await notificationService.sendBillNotification(patient, bill);
+            
+            // Show results to user
+            if (results.email) {
+                if (results.email.success) {
+                    this.showNotification(`📧 Bill notification email sent to ${patient.email}`, 'success');
+                } else if (results.email.demo) {
+                    this.showNotification(`📧 Bill notification (Demo Mode) - ${patient.email}`, 'info');
+                }
+            }
+            
+            if (results.sms) {
+                if (results.sms.success) {
+                    if (results.sms.method === 'WhatsApp Web') {
+                        this.showNotification(`📱 WhatsApp bill notification opened for ${patient.phone}`, 'success');
+                    } else {
+                        this.showNotification(`📱 SMS bill notification sent to ${patient.phone}`, 'success');
+                    }
+                } else if (results.sms.demo) {
+                    this.showNotification(`📱 SMS bill notification (Demo Mode) - ${patient.phone}`, 'info');
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error sending bill notification:', error);
+        }
     }
 
     getServicesFromForm() {
@@ -826,13 +924,22 @@ class ReceptionistDashboard {
         const serviceRows = document.querySelectorAll('.service-row');
         
         serviceRows.forEach(row => {
-            const name = row.querySelector('.service-name').value;
+            const serviceSelect = row.querySelector('.service-select');
+            const serviceNameInput = row.querySelector('.service-name');
             const quantity = parseInt(row.querySelector('.service-quantity').value);
             const rate = parseFloat(row.querySelector('.service-rate').value);
             
-            if (name && quantity && rate) {
+            let serviceName = '';
+            
+            if (serviceSelect.value === 'Custom') {
+                serviceName = serviceNameInput.value;
+            } else if (serviceSelect.value) {
+                serviceName = serviceSelect.value;
+            }
+            
+            if (serviceName && quantity && rate) {
                 services.push({
-                    name: name,
+                    name: serviceName,
                     quantity: quantity,
                     rate: rate,
                     amount: quantity * rate
@@ -853,6 +960,70 @@ class ReceptionistDashboard {
         this.calculateBillTotal();
     }
 
+    handleServiceSelection(select) {
+        const row = select.closest('.service-row');
+        const selectedOption = select.options[select.selectedIndex];
+        const serviceNameInput = row.querySelector('.service-name');
+        const rateInput = row.querySelector('.service-rate');
+        const quantityInput = row.querySelector('.service-quantity');
+        
+        if (selectedOption.value === '') {
+            // Clear values if no service selected
+            serviceNameInput.value = '';
+            rateInput.value = '';
+            serviceNameInput.style.display = 'none';
+            return;
+        }
+        
+        if (selectedOption.value === 'Custom') {
+            // Show custom service input
+            serviceNameInput.style.display = 'block';
+            serviceNameInput.value = '';
+            rateInput.value = '';
+            serviceNameInput.placeholder = 'Enter custom service name';
+            serviceNameInput.required = true;
+        } else {
+            // Hide custom input and use selected service
+            serviceNameInput.style.display = 'none';
+            serviceNameInput.value = selectedOption.value;
+            serviceNameInput.required = false;
+            
+            // Auto-fill rate
+            const rate = selectedOption.getAttribute('data-rate') || 0;
+            rateInput.value = rate;
+        }
+        
+        // Recalculate amount
+        this.calculateServiceAmount(quantityInput);
+    }
+
+    handlePaymentStatusChange(select) {
+        const dueDateInput = document.getElementById('dueDate');
+        if (!dueDateInput) return;
+        
+        const billDate = document.getElementById('billDate').value;
+        const today = new Date();
+        
+        switch(select.value) {
+            case 'paid':
+                // If paid, set due date to today (already paid)
+                dueDateInput.value = today.toISOString().split('T')[0];
+                break;
+            case 'pending':
+                // If pending, set due date to 30 days from bill date
+                const pendingDueDate = new Date(billDate || today);
+                pendingDueDate.setDate(pendingDueDate.getDate() + 30);
+                dueDateInput.value = pendingDueDate.toISOString().split('T')[0];
+                break;
+            case 'overdue':
+                // If overdue, set due date to past (e.g., 30 days ago)
+                const overdueDueDate = new Date(billDate || today);
+                overdueDueDate.setDate(overdueDueDate.getDate() - 30);
+                dueDateInput.value = overdueDueDate.toISOString().split('T')[0];
+                break;
+        }
+    }
+
     calculateBillTotal() {
         const services = this.getServicesFromForm();
         const subtotal = services.reduce((sum, service) => sum + service.amount, 0);
@@ -869,7 +1040,25 @@ class ReceptionistDashboard {
         const serviceRow = document.createElement('div');
         serviceRow.className = 'service-row';
         serviceRow.innerHTML = `
-            <input type="text" placeholder="Service/Item" class="service-name" required>
+            <select class="service-select" required>
+                <option value="">Select Service/Item</option>
+                <option value="Consultation" data-rate="500">Consultation - ₹500</option>
+                <option value="Follow-up" data-rate="300">Follow-up - ₹300</option>
+                <option value="Emergency Consultation" data-rate="1000">Emergency Consultation - ₹1000</option>
+                <option value="Blood Test" data-rate="200">Blood Test - ₹200</option>
+                <option value="X-Ray" data-rate="400">X-Ray - ₹400</option>
+                <option value="ECG" data-rate="300">ECG - ₹300</option>
+                <option value="Ultrasound" data-rate="800">Ultrasound - ₹800</option>
+                <option value="MRI Scan" data-rate="3000">MRI Scan - ₹3000</option>
+                <option value="CT Scan" data-rate="2500">CT Scan - ₹2500</option>
+                <option value="Physiotherapy" data-rate="600">Physiotherapy - ₹600</option>
+                <option value="Vaccination" data-rate="150">Vaccination - ₹150</option>
+                <option value="Dental Checkup" data-rate="400">Dental Checkup - ₹400</option>
+                <option value="Dental Cleaning" data-rate="500">Dental Cleaning - ₹500</option>
+                <option value="Medicine" data-rate="0">Medicine - Custom Rate</option>
+                <option value="Custom" data-rate="0">Custom Service</option>
+            </select>
+            <input type="text" placeholder="Service/Item" class="service-name" style="display: none;" required>
             <input type="number" placeholder="Quantity" class="service-quantity" min="1" value="1" required>
             <input type="number" placeholder="Rate" class="service-rate" min="0" step="0.01" required>
             <input type="number" placeholder="Amount" class="service-amount" readonly>
@@ -885,7 +1074,25 @@ class ReceptionistDashboard {
         const serviceRow = document.createElement('div');
         serviceRow.className = 'service-row';
         serviceRow.innerHTML = `
-            <input type="text" placeholder="Service/Item" class="service-name" value="${serviceName}" required>
+            <select class="service-select" required>
+                <option value="">Select Service/Item</option>
+                <option value="Consultation" data-rate="500">Consultation - ₹500</option>
+                <option value="Follow-up" data-rate="300">Follow-up - ₹300</option>
+                <option value="Emergency Consultation" data-rate="1000">Emergency Consultation - ₹1000</option>
+                <option value="Blood Test" data-rate="200">Blood Test - ₹200</option>
+                <option value="X-Ray" data-rate="400">X-Ray - ₹400</option>
+                <option value="ECG" data-rate="300">ECG - ₹300</option>
+                <option value="Ultrasound" data-rate="800">Ultrasound - ₹800</option>
+                <option value="MRI Scan" data-rate="3000">MRI Scan - ₹3000</option>
+                <option value="CT Scan" data-rate="2500">CT Scan - ₹2500</option>
+                <option value="Physiotherapy" data-rate="600">Physiotherapy - ₹600</option>
+                <option value="Vaccination" data-rate="150">Vaccination - ₹150</option>
+                <option value="Dental Checkup" data-rate="400">Dental Checkup - ₹400</option>
+                <option value="Dental Cleaning" data-rate="500">Dental Cleaning - ₹500</option>
+                <option value="Medicine" data-rate="0">Medicine - Custom Rate</option>
+                <option value="Custom" data-rate="0">Custom Service</option>
+            </select>
+            <input type="text" placeholder="Service/Item" class="service-name" style="display: none;" required>
             <input type="number" placeholder="Quantity" class="service-quantity" min="1" value="1" required>
             <input type="number" placeholder="Rate" class="service-rate" min="0" step="0.01" value="${rate}" required>
             <input type="number" placeholder="Amount" class="service-amount" value="${rate}" readonly>
@@ -894,6 +1101,22 @@ class ReceptionistDashboard {
             </button>
         `;
         container.appendChild(serviceRow);
+        
+        // Set the dropdown to the predefined service
+        const serviceSelect = serviceRow.querySelector('.service-select');
+        const serviceNameInput = serviceRow.querySelector('.service-name');
+        
+        // Find and select the matching option
+        const matchingOption = Array.from(serviceSelect.options).find(option => option.value === serviceName);
+        if (matchingOption) {
+            serviceSelect.value = serviceName;
+            serviceNameInput.value = serviceName;
+        } else {
+            // If not found in dropdown, set as custom service
+            serviceSelect.value = 'Custom';
+            serviceNameInput.style.display = 'block';
+            serviceNameInput.value = serviceName;
+        }
         
         // Set up event listeners for the new row
         const quantityInput = serviceRow.querySelector('.service-quantity');
@@ -959,6 +1182,8 @@ class ReceptionistDashboard {
                     <p>Subtotal: ₹${bill.subtotal.toFixed(2)}</p>
                     <p>Tax (18%): ₹${bill.tax.toFixed(2)}</p>
                     <p><strong>Total: ₹${bill.total.toFixed(2)}</strong></p>
+                    <p>Payment Status: <span class="badge badge-${bill.paymentStatus === 'paid' ? 'success' : bill.paymentStatus === 'pending' ? 'warning' : 'danger'}">${bill.paymentStatus.toUpperCase()}</span></p>
+                    ${bill.dueDate ? `<p>Due Date: ${new Date(bill.dueDate).toLocaleDateString()}</p>` : ''}
                 </div>
             </div>
         `;
@@ -970,7 +1195,25 @@ class ReceptionistDashboard {
         document.getElementById('billingForm').reset();
         document.getElementById('servicesContainer').innerHTML = `
             <div class="service-row">
-                <input type="text" placeholder="Service/Item" class="service-name" required>
+                <select class="service-select" required>
+                    <option value="">Select Service/Item</option>
+                    <option value="Consultation" data-rate="500">Consultation - ₹500</option>
+                    <option value="Follow-up" data-rate="300">Follow-up - ₹300</option>
+                    <option value="Emergency Consultation" data-rate="1000">Emergency Consultation - ₹1000</option>
+                    <option value="Blood Test" data-rate="200">Blood Test - ₹200</option>
+                    <option value="X-Ray" data-rate="400">X-Ray - ₹400</option>
+                    <option value="ECG" data-rate="300">ECG - ₹300</option>
+                    <option value="Ultrasound" data-rate="800">Ultrasound - ₹800</option>
+                    <option value="MRI Scan" data-rate="3000">MRI Scan - ₹3000</option>
+                    <option value="CT Scan" data-rate="2500">CT Scan - ₹2500</option>
+                    <option value="Physiotherapy" data-rate="600">Physiotherapy - ₹600</option>
+                    <option value="Vaccination" data-rate="150">Vaccination - ₹150</option>
+                    <option value="Dental Checkup" data-rate="400">Dental Checkup - ₹400</option>
+                    <option value="Dental Cleaning" data-rate="500">Dental Cleaning - ₹500</option>
+                    <option value="Medicine" data-rate="0">Medicine - Custom Rate</option>
+                    <option value="Custom" data-rate="0">Custom Service</option>
+                </select>
+                <input type="text" placeholder="Service/Item" class="service-name" style="display: none;" required>
                 <input type="number" placeholder="Quantity" class="service-quantity" min="1" value="1" required>
                 <input type="number" placeholder="Rate" class="service-rate" min="0" step="0.01" required>
                 <input type="number" placeholder="Amount" class="service-amount" readonly>
@@ -1087,52 +1330,71 @@ class ReceptionistDashboard {
     }
 
     generateCharts(patients, bills) {
+        // Destroy existing charts if they exist
+        this.destroyCharts();
+        
         // Patient chart
-        const patientCtx = document.getElementById('patientChart').getContext('2d');
-        new Chart(patientCtx, {
-            type: 'line',
-            data: {
-                labels: this.getDateLabels(patients),
-                datasets: [{
-                    label: 'Patients',
-                    data: this.getPatientCounts(patients),
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
+        const patientCtx = document.getElementById('patientChart');
+        if (patientCtx) {
+            this.patientChart = new Chart(patientCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: this.getDateLabels(patients),
+                    datasets: [{
+                        label: 'Patients',
+                        data: this.getPatientCounts(patients),
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
         
         // Revenue chart
-        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        new Chart(revenueCtx, {
-            type: 'bar',
-            data: {
-                labels: this.getDateLabels(bills),
-                datasets: [{
-                    label: 'Revenue',
-                    data: this.getRevenueCounts(bills),
-                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
+        const revenueCtx = document.getElementById('revenueChart');
+        if (revenueCtx) {
+            this.revenueChart = new Chart(revenueCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: this.getDateLabels(bills),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: this.getRevenueCounts(bills),
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+    }
+
+    destroyCharts() {
+        // Destroy existing charts to prevent memory leaks
+        if (this.patientChart) {
+            this.patientChart.destroy();
+            this.patientChart = null;
+        }
+        if (this.revenueChart) {
+            this.revenueChart.destroy();
+            this.revenueChart = null;
+        }
     }
 
     getDateLabels(data) {
@@ -1218,17 +1480,19 @@ class ReceptionistDashboard {
         }
         
         notificationsList.innerHTML = recentNotifications.map(notification => `
-            <div class="notification-item">
-                <div class="notification-content">
-                    <div class="notification-type ${notification.type}">
-                        <i class="fas fa-${notification.type === 'email' ? 'envelope' : 'sms'}"></i>
+            <div class="notification-item ${notification.status === 'sent' ? 'success' : notification.status === 'failed' ? 'error' : 'info'}">
+                <div class="notification-item-header">
+                    <span class="notification-item-type">
+                        <i class="notification-item-icon fas fa-${notification.type === 'email' ? 'envelope' : notification.type === 'sms' ? 'sms' : 'bell'}"></i>
                         ${notification.type.toUpperCase()}
-                    </div>
-                    <div class="notification-message">${notification.message}</div>
-                    <div class="notification-recipient">To: ${notification.recipient}</div>
-                    <span class="notification-status ${notification.status}">${notification.status}</span>
+                    </span>
+                    <span class="notification-item-time">${new Date(notification.timestamp).toLocaleString()}</span>
                 </div>
-                <div class="notification-time">${new Date(notification.timestamp).toLocaleString()}</div>
+                <div class="notification-item-message">${notification.message}</div>
+                <div class="notification-item-details">
+                    <div>To: ${notification.recipient}</div>
+                    <div>Status: <span class="notification-status ${notification.status}">${notification.status}</span></div>
+                </div>
             </div>
         `).join('');
         
@@ -1332,8 +1596,9 @@ class ReceptionistDashboard {
 
         // Fill the form
         setTimeout(() => {
-            const patientSelect = document.getElementById('bill-patient');
-            const billDate = document.getElementById('bill-date');
+            const patientSelect = document.getElementById('billPatient');
+            const billDate = document.getElementById('billDate');
+            const paymentStatus = document.getElementById('paymentStatus');
             
             if (patientSelect) {
                 patientSelect.value = patient.id;
@@ -1341,6 +1606,10 @@ class ReceptionistDashboard {
             
             if (billDate) {
                 billDate.value = new Date().toISOString().split('T')[0];
+            }
+            
+            if (paymentStatus) {
+                paymentStatus.value = 'pending'; // Default to pending for new bills
             }
 
             // Add consultation service based on token type
@@ -1373,7 +1642,7 @@ class ReceptionistDashboard {
         }, 500);
     }
 
-    sendPaymentReminder() {
+    async sendPaymentReminder() {
         // Get the payment ID from the payment details modal
         const paymentId = document.getElementById('payment-id')?.textContent;
         if (!paymentId) {
@@ -1393,11 +1662,47 @@ class ReceptionistDashboard {
             return;
         }
 
-        // Send reminder (simulated)
-        const reminderMessage = `Dear ${patient.firstName} ${patient.lastName}, this is a reminder that your payment of ₹${payment.amount} is ${payment.status === 'pending' ? 'pending' : 'overdue'}. Please make payment at your earliest convenience.`;
-        
-        // Add notification record
-        this.addNotificationRecord('payment_reminder', patient.email || patient.phone, payment, reminderMessage);
+        try {
+            // Use the real notification service
+            const results = await notificationService.sendPaymentReminder(patient, payment);
+            
+            // Show results to user
+            if (results.email) {
+                if (results.email.success) {
+                    this.showNotification(`📧 Payment reminder email sent to ${patient.email}`, 'success');
+                } else if (results.email.demo) {
+                    this.showNotification(`📧 Payment reminder (Demo Mode) - ${patient.email}`, 'info');
+                } else {
+                    this.showNotification(`📧 Email failed: ${results.email.error}`, 'error');
+                }
+            }
+            
+            if (results.sms) {
+                if (results.sms.success) {
+                    if (results.sms.method === 'WhatsApp Web') {
+                        this.showNotification(`📱 WhatsApp reminder opened for ${patient.phone}`, 'success');
+                    } else {
+                        this.showNotification(`📱 SMS reminder sent to ${patient.phone}`, 'success');
+                    }
+                } else if (results.sms.demo) {
+                    this.showNotification(`📱 SMS reminder (Demo Mode) - ${patient.phone}`, 'info');
+                } else {
+                    this.showNotification(`📱 SMS failed: ${results.sms.error}`, 'error');
+                }
+            }
+            
+            // Add notification records
+            if (results.email) {
+                this.addNotificationRecord('payment_reminder', patient.email, payment, `Payment reminder sent via email`);
+            }
+            if (results.sms) {
+                this.addNotificationRecord('payment_reminder', patient.phone, payment, `Payment reminder sent via SMS`);
+            }
+            
+        } catch (error) {
+            console.error('Error sending payment reminder:', error);
+            this.showNotification('Error sending payment reminder', 'error');
+        }
         
         // Update payment with reminder sent
         payment.lastReminderSent = new Date().toISOString();
@@ -1408,9 +1713,6 @@ class ReceptionistDashboard {
         
         // Update dashboard stats
         this.updateDashboardStats();
-        
-        // Show success message
-        this.showNotification(`Payment reminder sent to ${patient.firstName} ${patient.lastName}`, 'success');
         
         // Close payment modal
         this.closePaymentModal();
@@ -1674,8 +1976,16 @@ class ReceptionistDashboard {
         payment.status = newStatus;
         payment.lastUpdated = new Date().toISOString();
         
+        console.log('Payment status updated:', {
+            paymentId: paymentId,
+            oldStatus: oldStatus,
+            newStatus: newStatus,
+            payment: payment
+        });
+        
         // Save data
         this.saveData();
+        console.log('Payment data saved to localStorage');
         
         // Update UI
         this.loadPaymentTable();

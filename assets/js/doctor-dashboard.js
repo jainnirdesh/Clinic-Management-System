@@ -52,6 +52,13 @@ class DoctorDashboard {
         this.tokens = JSON.parse(localStorage.getItem('clinicTokens') || '[]');
         this.prescriptions = JSON.parse(localStorage.getItem('clinicPrescriptions') || '[]');
         
+        // Debug logging
+        console.log('Doctor Dashboard - Loaded data:', {
+            patients: this.patients.length,
+            tokens: this.tokens.length,
+            currentUser: this.currentUser
+        });
+        
         // Load recent activities
         this.loadRecentActivities();
     }
@@ -168,6 +175,21 @@ class DoctorDashboard {
             token.doctorId === this.currentUser.doctorId &&
             new Date(token.date).toDateString() === today
         ).sort((a, b) => a.tokenNumber - b.tokenNumber);
+        
+        // Debug logging
+        console.log('Doctor Dashboard - updatePatientQueue:', {
+            today: today,
+            currentDoctorId: this.currentUser.doctorId,
+            allTokens: this.tokens.length,
+            doctorTokens: doctorTokens.length,
+            doctorTokensDetails: doctorTokens.map(t => ({
+                id: t.id,
+                doctorId: t.doctorId,
+                tokenNumber: t.tokenNumber,
+                date: t.date,
+                status: t.status
+            }))
+        });
         
         queueCount.textContent = doctorTokens.length;
         queueContainer.innerHTML = '';
