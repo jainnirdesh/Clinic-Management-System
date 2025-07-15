@@ -6,22 +6,14 @@
       "use": "@vercel/static"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/index.html"
+      "source": "/receptionist-dashboard",
+      "destination": "/receptionist-dashboard.html"
     },
     {
-      "src": "/receptionist-dashboard",
-      "dest": "/receptionist-dashboard.html"
-    },
-    {
-      "src": "/doctor-dashboard",
-      "dest": "/doctor-dashboard.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/doctor-dashboard",
+      "destination": "/doctor-dashboard.html"
     }
   ],
   "headers": [

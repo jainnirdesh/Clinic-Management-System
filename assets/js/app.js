@@ -490,13 +490,480 @@ function generateSuggestedId(role) {
     return `${prefix}${counter.toString().padStart(3, '0')}`;
 }
 
-// Export functions for use in other files
-window.AppUtils = {
-    showAlert,
-    generateId,
-    formatDate,
-    formatTime,
-    saveData,
-    loadData,
-    updateDateTime
-};
+// Quick Actions Functions
+function showContactInfo() {
+    const modal = createModal(
+        'Contact Information',
+        `
+        <div style="text-align: left;">
+            <h4><i class="fas fa-phone"></i> Phone Numbers</h4>
+            <p>Emergency: +1 (555) 911-0000<br>
+            Appointments: +1 (555) 123-4567<br>
+            General Inquiries: +1 (555) 987-6543</p>
+            
+            <h4><i class="fas fa-envelope"></i> Email Addresses</h4>
+            <p>info@healthcareclinic.com<br>
+            appointments@healthcareclinic.com<br>
+            emergency@healthcareclinic.com</p>
+            
+            <h4><i class="fas fa-map-marker-alt"></i> Address</h4>
+            <p>123 Healthcare Street<br>
+            Medical District<br>
+            City, State 12345</p>
+            
+            <h4><i class="fas fa-clock"></i> Operating Hours</h4>
+            <p>Monday - Friday: 8:00 AM - 8:00 PM<br>
+            Saturday: 9:00 AM - 5:00 PM<br>
+            Sunday: 10:00 AM - 4:00 PM</p>
+        </div>
+        `
+    );
+    document.body.appendChild(modal);
+}
+
+function showEmergencyInfo() {
+    const modal = createModal(
+        'Emergency Services',
+        `
+        <div style="text-align: left;">
+            <h4><i class="fas fa-ambulance"></i> Emergency Hotline</h4>
+            <p style="color: #dc3545; font-size: 1.2rem; font-weight: bold;">+1 (555) 911-0000</p>
+            
+            <h4><i class="fas fa-hospital"></i> 24/7 Services Available</h4>
+            <ul style="margin-left: 20px;">
+                <li>Emergency Medicine</li>
+                <li>Trauma Care</li>
+                <li>Cardiac Emergency</li>
+                <li>Stroke Response</li>
+                <li>Pediatric Emergency</li>
+                <li>Poison Control</li>
+            </ul>
+            
+            <h4><i class="fas fa-info-circle"></i> When to Call Emergency</h4>
+            <ul style="margin-left: 20px;">
+                <li>Severe chest pain</li>
+                <li>Difficulty breathing</li>
+                <li>Severe injuries</li>
+                <li>Loss of consciousness</li>
+                <li>Severe allergic reactions</li>
+                <li>Signs of stroke</li>
+            </ul>
+            
+            <div style="background: #f8d7da; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                <strong>Important:</strong> For life-threatening emergencies, call 911 immediately.
+            </div>
+        </div>
+        `
+    );
+    document.body.appendChild(modal);
+}
+
+function showAppointmentInfo() {
+    const modal = createModal(
+        'Book Appointment',
+        `
+        <div style="text-align: left;">
+            <h4><i class="fas fa-calendar-check"></i> How to Book</h4>
+            <p>Currently, appointments are managed through our staff portal. Please contact us using one of the following methods:</p>
+            
+            <h4><i class="fas fa-phone"></i> Phone Booking</h4>
+            <p>Call us at: <strong>+1 (555) 123-4567</strong><br>
+            Available: Monday - Friday, 8:00 AM - 6:00 PM</p>
+            
+            <h4><i class="fas fa-envelope"></i> Email Booking</h4>
+            <p>Email us at: <strong>appointments@healthcareclinic.com</strong><br>
+            Include your preferred date, time, and reason for visit.</p>
+            
+            <h4><i class="fas fa-user-md"></i> Available Services</h4>
+            <ul style="margin-left: 20px;">
+                <li>General Consultation - ₹500</li>
+                <li>Specialist Consultation - ₹800</li>
+                <li>Health Checkup - ₹1200</li>
+                <li>Vaccination - ₹200</li>
+                <li>Lab Tests - ₹300</li>
+                <li>X-Ray - ₹800</li>
+            </ul>
+            
+            <div style="background: #d4edda; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                <strong>Note:</strong> Please arrive 15 minutes before your appointment time.
+            </div>
+        </div>
+        `
+    );
+    document.body.appendChild(modal);
+}
+
+function createModal(title, content) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal(this)">&times;</span>
+            <h3>${title}</h3>
+            ${content}
+        </div>
+    `;
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal(modal.querySelector('.modal-close'));
+        }
+    });
+    
+    // Show modal
+    modal.style.display = 'block';
+    
+    return modal;
+}
+
+function closeModal(element) {
+    const modal = element.closest('.modal');
+    modal.style.display = 'none';
+    setTimeout(() => {
+        modal.remove();
+    }, 300);
+}
+
+// Enhanced stats animation
+function animateStats() {
+    const stats = [
+        { id: 'totalPatients', target: 1247, prefix: '' },
+        { id: 'activeDoctors', target: 12, prefix: '' },
+        { id: 'todayAppointments', target: 45, prefix: '' }
+    ];
+    
+    stats.forEach(stat => {
+        const element = document.getElementById(stat.id);
+        if (element) {
+            animateNumber(element, 0, stat.target, 2000, stat.prefix);
+        }
+    });
+}
+
+function animateNumber(element, start, end, duration, prefix = '') {
+    const startTime = performance.now();
+    const difference = end - start;
+    
+    function updateNumber(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Use easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const current = Math.floor(start + (difference * easeOutQuart));
+        
+        element.textContent = prefix + current.toLocaleString();
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateNumber);
+        }
+    }
+    
+    requestAnimationFrame(updateNumber);
+}
+
+// Initialize stats animation when home tab is shown
+function initializeHomePageAnimations() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.animation = 'fadeInUp 0.8s ease forwards';
+            }
+        });
+    }, { threshold: 0.1 });
+    
+    // Observe all sections
+    document.querySelectorAll('.services-section, .features-section, .testimonials-section, .quick-actions-section, .contact-info-section').forEach(section => {
+        observer.observe(section);
+    });
+}
+
+// Add fadeInUp animation to CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .services-section,
+    .features-section,
+    .testimonials-section,
+    .quick-actions-section,
+    .contact-info-section {
+        opacity: 0;
+    }
+`;
+document.head.appendChild(style);
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+    initializeHomePageAnimations();
+    
+    // Animate stats when home tab is active
+    const homeTab = document.getElementById('home');
+    if (homeTab && homeTab.classList.contains('active')) {
+        setTimeout(animateStats, 500);
+    }
+});
+
+// Create particle effect
+function createParticles() {
+    const particlesContainer = document.createElement('div');
+    particlesContainer.className = 'particles';
+    document.body.appendChild(particlesContainer);
+    
+    for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 15 + 's';
+        particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        particlesContainer.appendChild(particle);
+    }
+}
+
+// Add typing effect to hero text
+function addTypingEffect() {
+    const heroText = document.querySelector('.hero h2');
+    if (heroText) {
+        const text = heroText.textContent;
+        heroText.textContent = '';
+        heroText.classList.add('typing-text');
+        
+        let i = 0;
+        const typeInterval = setInterval(() => {
+            if (i < text.length) {
+                heroText.textContent += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(typeInterval);
+                heroText.classList.remove('typing-text');
+            }
+        }, 100);
+    }
+}
+
+// Add scroll reveal animation
+function initScrollReveal() {
+    const revealElements = document.querySelectorAll('.service-card, .feature-card, .testimonial-card, .quick-action-card, .contact-card');
+    
+    revealElements.forEach(element => {
+        element.classList.add('scroll-reveal');
+    });
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+            }
+        });
+    }, { threshold: 0.1 });
+    
+    revealElements.forEach(element => {
+        observer.observe(element);
+    });
+}
+
+// Add interactive icons
+function addInteractiveIcons() {
+    const icons = document.querySelectorAll('.service-card i, .feature-card i, .quick-action-card i, .contact-card i');
+    
+    icons.forEach(icon => {
+        icon.classList.add('interactive-icon');
+        
+        icon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Create ripple effect
+            const ripple = document.createElement('div');
+            ripple.style.position = 'absolute';
+            ripple.style.width = '20px';
+            ripple.style.height = '20px';
+            ripple.style.background = 'rgba(102, 126, 234, 0.3)';
+            ripple.style.borderRadius = '50%';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.animation = 'ripple 0.6s linear';
+            ripple.style.left = '50%';
+            ripple.style.top = '50%';
+            ripple.style.marginLeft = '-10px';
+            ripple.style.marginTop = '-10px';
+            ripple.style.pointerEvents = 'none';
+            
+            this.style.position = 'relative';
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+}
+
+// Add ripple animation to CSS
+const rippleStyle = document.createElement('style');
+rippleStyle.textContent = `
+    @keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(rippleStyle);
+
+// Enhanced stats with more realistic data
+function getRealisticStats() {
+    const now = new Date();
+    const hour = now.getHours();
+    
+    // Simulate different stats based on time of day
+    let todayAppointments = 0;
+    if (hour >= 8 && hour < 12) {
+        todayAppointments = Math.floor(Math.random() * 20) + 25; // Morning rush
+    } else if (hour >= 12 && hour < 17) {
+        todayAppointments = Math.floor(Math.random() * 15) + 35; // Afternoon
+    } else if (hour >= 17 && hour < 20) {
+        todayAppointments = Math.floor(Math.random() * 10) + 20; // Evening
+    } else {
+        todayAppointments = Math.floor(Math.random() * 5) + 5; // Night/Early morning
+    }
+    
+    return {
+        totalPatients: 1247 + Math.floor(Math.random() * 100),
+        activeDoctors: 12,
+        todayAppointments: todayAppointments
+    };
+}
+
+// Update stats animation with realistic data
+function animateStatsRealistic() {
+    const stats = getRealisticStats();
+    const statElements = [
+        { id: 'totalPatients', target: stats.totalPatients, prefix: '' },
+        { id: 'activeDoctors', target: stats.activeDoctors, prefix: '' },
+        { id: 'todayAppointments', target: stats.todayAppointments, prefix: '' }
+    ];
+    
+    statElements.forEach(stat => {
+        const element = document.getElementById(stat.id);
+        if (element) {
+            animateNumber(element, 0, stat.target, 2000, stat.prefix);
+        }
+    });
+}
+
+// Add current time display
+function addCurrentTimeDisplay() {
+    const timeDisplay = document.createElement('div');
+    timeDisplay.style.position = 'fixed';
+    timeDisplay.style.top = '10px';
+    timeDisplay.style.right = '10px';
+    timeDisplay.style.background = 'rgba(102, 126, 234, 0.9)';
+    timeDisplay.style.color = 'white';
+    timeDisplay.style.padding = '8px 12px';
+    timeDisplay.style.borderRadius = '20px';
+    timeDisplay.style.fontSize = '0.9rem';
+    timeDisplay.style.zIndex = '9999';
+    timeDisplay.style.backdropFilter = 'blur(10px)';
+    timeDisplay.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+    
+    function updateTime() {
+        const now = new Date();
+        timeDisplay.textContent = now.toLocaleTimeString();
+    }
+    
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    document.body.appendChild(timeDisplay);
+}
+
+// Add weather widget simulation
+function addWeatherWidget() {
+    const weatherWidget = document.createElement('div');
+    weatherWidget.style.position = 'fixed';
+    weatherWidget.style.top = '10px';
+    weatherWidget.style.left = '10px';
+    weatherWidget.style.background = 'rgba(255, 255, 255, 0.9)';
+    weatherWidget.style.color = '#333';
+    weatherWidget.style.padding = '8px 12px';
+    weatherWidget.style.borderRadius = '20px';
+    weatherWidget.style.fontSize = '0.9rem';
+    weatherWidget.style.zIndex = '9999';
+    weatherWidget.style.backdropFilter = 'blur(10px)';
+    weatherWidget.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+    weatherWidget.style.display = 'flex';
+    weatherWidget.style.alignItems = 'center';
+    weatherWidget.style.gap = '8px';
+    
+    const weatherIcon = document.createElement('i');
+    weatherIcon.className = 'fas fa-sun';
+    weatherIcon.style.color = '#f39c12';
+    
+    const weatherText = document.createElement('span');
+    weatherText.textContent = '24°C';
+    
+    weatherWidget.appendChild(weatherIcon);
+    weatherWidget.appendChild(weatherText);
+    
+    // Simulate weather changes
+    const weathers = [
+        { icon: 'fas fa-sun', temp: '24°C', color: '#f39c12' },
+        { icon: 'fas fa-cloud', temp: '22°C', color: '#95a5a6' },
+        { icon: 'fas fa-cloud-sun', temp: '26°C', color: '#f1c40f' },
+        { icon: 'fas fa-cloud-rain', temp: '20°C', color: '#3498db' }
+    ];
+    
+    let currentWeather = 0;
+    setInterval(() => {
+        currentWeather = (currentWeather + 1) % weathers.length;
+        const weather = weathers[currentWeather];
+        weatherIcon.className = weather.icon;
+        weatherIcon.style.color = weather.color;
+        weatherText.textContent = weather.temp;
+    }, 30000); // Change every 30 seconds
+    
+    document.body.appendChild(weatherWidget);
+}
+
+// Initialize all enhancements
+function initializeEnhancements() {
+    createParticles();
+    addTypingEffect();
+    initScrollReveal();
+    addInteractiveIcons();
+    addCurrentTimeDisplay();
+    addWeatherWidget();
+}
+
+// Update the main initialization
+document.addEventListener('DOMContentLoaded', () => {
+    initializeEnhancements();
+    initializeHomePageAnimations();
+    
+    // Use realistic stats
+    const homeTab = document.getElementById('home');
+    if (homeTab && homeTab.classList.contains('active')) {
+        setTimeout(animateStatsRealistic, 500);
+    }
+});
+
+// Update tab switching to use realistic stats
+const originalSwitchTab = switchTab;
+function switchTab(tabName) {
+    originalSwitchTab(tabName);
+    
+    // Use realistic stats animation for home tab
+    if (tabName === 'home') {
+        setTimeout(animateStatsRealistic, 200);
+    }
+}
