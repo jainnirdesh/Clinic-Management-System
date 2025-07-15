@@ -752,9 +752,10 @@ class ReceptionistDashboard {
     generateBill() {
         const patientId = document.getElementById('billPatient').value;
         const billDate = document.getElementById('billDate').value;
+        const paymentMethod = document.getElementById('paymentMethod').value;
         
-        if (!patientId || !billDate) {
-            this.showNotification('Please select patient and bill date', 'error');
+        if (!patientId || !billDate || !paymentMethod) {
+            this.showNotification('Please select patient, bill date, and payment method', 'error');
             return;
         }
         
@@ -799,7 +800,7 @@ class ReceptionistDashboard {
             patientId: patientId,
             amount: total,
             status: 'pending',
-            paymentMethod: 'Cash', // Default payment method
+            paymentMethod: paymentMethod,
             date: billDate,
             createdAt: new Date().toISOString(),
             lastUpdated: new Date().toISOString()
@@ -1602,7 +1603,7 @@ class ReceptionistDashboard {
                 csvData.push([
                     new Date(payment.date).toLocaleDateString(),
                     payment.billNo,
-                    patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient',
+                    patient ? patient.name : 'Unknown Patient',
                     payment.amount.toFixed(2),
                     payment.paymentMethod || 'Cash',
                     payment.status
@@ -1683,7 +1684,7 @@ class ReceptionistDashboard {
         
         // Add activity log
         const patient = this.patients.find(p => p.id === payment.patientId);
-        const patientName = patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient';
+        const patientName = patient ? patient.name : 'Unknown Patient';
         this.addRecentActivity(`Payment status updated: ${patientName} - ${oldStatus} → ${newStatus}`, 'payment');
         
         // Show success message
