@@ -1133,3 +1133,363 @@ body {
     0% { left: -100%; }
     100% { left: 100%; }
 }
+
+/* ============================================
+   MODAL STYLES FOR HOME PAGE
+   ============================================ */
+
+/* Modal Overlay */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modal Content Container */
+.modal-content {
+    background-color: #ffffff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Modal Header */
+.modal-content h3 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 30px;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-content h3::before {
+    content: '\f05a';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    font-size: 1.2rem;
+}
+
+/* Modal Body */
+.modal-content > div:not(h3) {
+    padding: 30px;
+    max-height: 60vh;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+/* Modal Close Button */
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 2rem;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+    z-index: 1;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.modal-close:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* Modal Typography */
+.modal-content h4 {
+    color: #333;
+    margin: 1.5rem 0 0.5rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-content h4:first-child {
+    margin-top: 0;
+}
+
+.modal-content h4 i {
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.modal-content p {
+    color: #666;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.modal-content ul {
+    margin: 0.5rem 0 1rem 0;
+    padding-left: 0;
+}
+
+.modal-content li {
+    color: #666;
+    margin-bottom: 0.5rem;
+    padding-left: 20px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.modal-content li::before {
+    content: '\f105';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: #667eea;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* Special Styling for Important Information */
+.modal-content div[style*="background: #f8d7da"] {
+    background: #f8d7da !important;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.modal-content div[style*="background: #f8d7da"]::before {
+    content: '\f06a';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: #dc3545;
+    font-size: 1.1rem;
+    margin-top: 2px;
+}
+
+.modal-content div[style*="background: #d4edda"] {
+    background: #d4edda !important;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.modal-content div[style*="background: #d4edda"]::before {
+    content: '\f05a';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: #28a745;
+    font-size: 1.1rem;
+    margin-top: 2px;
+}
+
+/* Emergency Phone Number Styling */
+.modal-content p[style*="color: #dc3545"] {
+    background: #fff5f5;
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.3rem !important;
+    font-weight: bold !important;
+    color: #dc3545 !important;
+    margin: 1rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-content p[style*="color: #dc3545"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #dc3545, #e74c3c, #dc3545);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Email and Phone Links */
+.modal-content p strong {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.modal-content a {
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.modal-content a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* Scrollbar Styling for Modal Content */
+.modal-content > div:not(h3)::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content > div:not(h3)::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.modal-content > div:not(h3)::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.modal-content > div:not(h3)::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+        max-height: 85vh;
+    }
+    
+    .modal-content h3 {
+        padding: 15px 20px;
+        font-size: 1.3rem;
+    }
+    
+    .modal-content > div:not(h3) {
+        padding: 20px;
+        max-height: 65vh;
+    }
+    
+    .modal-close {
+        top: 10px;
+        right: 15px;
+        font-size: 1.5rem;
+        width: 30px;
+        height: 30px;
+    }
+}
+
+/* Modal Animation on Close */
+.modal.closing {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+.modal.closing .modal-content {
+    animation: modalSlideOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes modalSlideOut {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Focus trap for accessibility */
+.modal-content:focus {
+    outline: none;
+}
+
+/* Modal backdrop click area */
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+/* Enhanced loading animation */
+.modal-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.modal-loading .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   END MODAL STYLES
+   ============================================ */

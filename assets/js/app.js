@@ -497,14 +497,14 @@ function showContactInfo() {
         `
         <div style="text-align: left;">
             <h4><i class="fas fa-phone"></i> Phone Numbers</h4>
-            <p>Emergency: +1 (555) 911-0000<br>
-            Appointments: +1 (555) 123-4567<br>
-            General Inquiries: +1 (555) 987-6543</p>
+            <p>Emergency: <a href="tel:+15559110000"><strong>+1 (555) 911-0000</strong></a><br>
+            Appointments: <a href="tel:+15551234567"><strong>+1 (555) 123-4567</strong></a><br>
+            General Inquiries: <a href="tel:+15559876543"><strong>+1 (555) 987-6543</strong></a></p>
             
             <h4><i class="fas fa-envelope"></i> Email Addresses</h4>
-            <p>info@healthcareclinic.com<br>
-            appointments@healthcareclinic.com<br>
-            emergency@healthcareclinic.com</p>
+            <p><a href="mailto:info@healthcareclinic.com"><strong>info@healthcareclinic.com</strong></a><br>
+            <a href="mailto:appointments@healthcareclinic.com"><strong>appointments@healthcareclinic.com</strong></a><br>
+            <a href="mailto:emergency@healthcareclinic.com"><strong>emergency@healthcareclinic.com</strong></a></p>
             
             <h4><i class="fas fa-map-marker-alt"></i> Address</h4>
             <p>123 Healthcare Street<br>
@@ -512,9 +512,12 @@ function showContactInfo() {
             City, State 12345</p>
             
             <h4><i class="fas fa-clock"></i> Operating Hours</h4>
-            <p>Monday - Friday: 8:00 AM - 8:00 PM<br>
-            Saturday: 9:00 AM - 5:00 PM<br>
-            Sunday: 10:00 AM - 4:00 PM</p>
+            <p><strong>Monday - Friday:</strong> 8:00 AM - 8:00 PM<br>
+            <strong>Saturday:</strong> 9:00 AM - 5:00 PM<br>
+            <strong>Sunday:</strong> 10:00 AM - 4:00 PM</p>
+            
+            <h4><i class="fas fa-directions"></i> Getting Here</h4>
+            <p>We're located in the heart of the Medical District, easily accessible by public transportation and with ample parking available.</p>
         </div>
         `
     );
@@ -567,25 +570,28 @@ function showAppointmentInfo() {
             <p>Currently, appointments are managed through our staff portal. Please contact us using one of the following methods:</p>
             
             <h4><i class="fas fa-phone"></i> Phone Booking</h4>
-            <p>Call us at: <strong>+1 (555) 123-4567</strong><br>
-            Available: Monday - Friday, 8:00 AM - 6:00 PM</p>
+            <p>Call us at: <a href="tel:+15551234567"><strong>+1 (555) 123-4567</strong></a><br>
+            <strong>Available:</strong> Monday - Friday, 8:00 AM - 6:00 PM</p>
             
             <h4><i class="fas fa-envelope"></i> Email Booking</h4>
-            <p>Email us at: <strong>appointments@healthcareclinic.com</strong><br>
+            <p>Email us at: <a href="mailto:appointments@healthcareclinic.com"><strong>appointments@healthcareclinic.com</strong></a><br>
             Include your preferred date, time, and reason for visit.</p>
             
             <h4><i class="fas fa-user-md"></i> Available Services</h4>
-            <ul style="margin-left: 20px;">
-                <li>General Consultation - ₹500</li>
-                <li>Specialist Consultation - ₹800</li>
-                <li>Health Checkup - ₹1200</li>
-                <li>Vaccination - ₹200</li>
-                <li>Lab Tests - ₹300</li>
-                <li>X-Ray - ₹800</li>
+            <ul>
+                <li>General Consultation - <strong>₹500</strong></li>
+                <li>Specialist Consultation - <strong>₹800</strong></li>
+                <li>Health Checkup - <strong>₹1200</strong></li>
+                <li>Vaccination - <strong>₹200</strong></li>
+                <li>Lab Tests - <strong>₹300</strong></li>
+                <li>X-Ray - <strong>₹800</strong></li>
             </ul>
             
+            <h4><i class="fas fa-credit-card"></i> Payment Options</h4>
+            <p>We accept cash, credit cards, debit cards, and digital payments (UPI, PayTM, etc.)</p>
+            
             <div style="background: #d4edda; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-                <strong>Note:</strong> Please arrive 15 minutes before your appointment time.
+                <strong>Important:</strong> Please arrive 15 minutes before your appointment time and bring a valid ID.
             </div>
         </div>
         `
@@ -597,31 +603,56 @@ function createModal(title, content) {
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
+        <div class="modal-backdrop"></div>
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal(this)">&times;</span>
             <h3>${title}</h3>
-            ${content}
+            <div>${content}</div>
         </div>
     `;
     
     // Close modal when clicking outside
     modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
+        if (e.target === modal || e.target.classList.contains('modal-backdrop')) {
             closeModal(modal.querySelector('.modal-close'));
         }
     });
     
-    // Show modal
+    // Close modal on Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeModal(modal.querySelector('.modal-close'));
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    // Show modal with animation
     modal.style.display = 'block';
+    document.body.classList.add('modal-open');
+    
+    // Focus trap for accessibility
+    setTimeout(() => {
+        const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusableElements.length > 0) {
+            focusableElements[0].focus();
+        }
+    }, 100);
     
     return modal;
 }
 
 function closeModal(element) {
     const modal = element.closest('.modal');
-    modal.style.display = 'none';
+    
+    // Add closing animation
+    modal.classList.add('closing');
+    
+    // Remove modal after animation completes
     setTimeout(() => {
+        modal.style.display = 'none';
         modal.remove();
+        document.body.classList.remove('modal-open');
     }, 300);
 }
 
