@@ -158,8 +158,68 @@ class ReceptionistDashboard {
                 e.preventDefault();
                 const tabName = link.dataset.tab;
                 this.switchTab(tabName);
+                
+                // Close mobile menu if open
+                this.closeMobileMenu();
             });
         });
+
+        // Mobile menu toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        
+        if (mobileMenuToggle && sidebar) {
+            mobileMenuToggle.addEventListener('click', () => {
+                const isActive = sidebar.classList.contains('active');
+                
+                if (isActive) {
+                    this.closeMobileMenu();
+                } else {
+                    this.openMobileMenu();
+                }
+            });
+
+            // Close menu when clicking overlay
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    this.closeMobileMenu();
+                });
+            }
+
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.closeMobileMenu();
+                }
+            });
+        }
+    }
+
+    openMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        
+        if (sidebar) {
+            sidebar.classList.add('active');
+        }
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+        document.body.classList.add('menu-open');
+    }
+
+    closeMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        
+        if (sidebar) {
+            sidebar.classList.remove('active');
+        }
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+        document.body.classList.remove('menu-open');
     }
 
     switchTab(tabName) {

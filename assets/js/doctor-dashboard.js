@@ -10,6 +10,8 @@ class DoctorDashboard {
     }
 
     init() {
+        console.log('Doctor Dashboard - Initializing...');
+        
         // Check authentication
         this.checkAuth();
         
@@ -28,6 +30,8 @@ class DoctorDashboard {
         // Update date/time
         this.updateDateTime();
         setInterval(() => this.updateDateTime(), 1000);
+        
+        console.log('Doctor Dashboard - Initialization complete');
     }
 
     checkAuth() {
@@ -37,7 +41,12 @@ class DoctorDashboard {
         if (!user || !role || role !== 'doctor') {
             // For development/testing purposes, allow access with a demo user
             console.log('No valid authentication found, using demo user');
-            this.currentUser = { name: 'Dr. Smith', doctorId: 'DOC001', specialization: 'General Physician' };
+            this.currentUser = { 
+                name: 'Dr. John Smith', 
+                doctorId: 'DOC001', 
+                specialization: 'General Medicine',
+                email: 'doctor@clinic.com'
+            };
             document.getElementById('doctorName').textContent = this.currentUser.name;
             return;
         }
@@ -52,6 +61,11 @@ class DoctorDashboard {
         this.tokens = JSON.parse(localStorage.getItem('clinicTokens') || '[]');
         this.prescriptions = JSON.parse(localStorage.getItem('clinicPrescriptions') || '[]');
         
+        // Initialize sample data if no data exists
+        if (this.patients.length === 0) {
+            this.initializeSampleData();
+        }
+        
         // Debug logging
         console.log('Doctor Dashboard - Loaded data:', {
             patients: this.patients.length,
@@ -63,18 +77,118 @@ class DoctorDashboard {
         this.loadRecentActivities();
     }
 
+    initializeSampleData() {
+        // Create sample patients
+        const samplePatients = [
+            {
+                id: 'PAT001',
+                firstName: 'John',
+                lastName: 'Doe',
+                age: 35,
+                gender: 'Male',
+                phone: '+1-555-0201',
+                email: 'john.doe@email.com',
+                address: '123 Main St, City, State 12345',
+                bloodGroup: 'O+',
+                emergencyContact: '+1-555-0202',
+                medicalHistory: 'Hypertension, Diabetes',
+                registrationDate: new Date().toISOString()
+            },
+            {
+                id: 'PAT002',
+                firstName: 'Jane',
+                lastName: 'Smith',
+                age: 28,
+                gender: 'Female',
+                phone: '+1-555-0203',
+                email: 'jane.smith@email.com',
+                address: '456 Oak Ave, City, State 12345',
+                bloodGroup: 'A+',
+                emergencyContact: '+1-555-0204',
+                medicalHistory: 'None',
+                registrationDate: new Date().toISOString()
+            },
+            {
+                id: 'PAT003',
+                firstName: 'Robert',
+                lastName: 'Johnson',
+                age: 45,
+                gender: 'Male',
+                phone: '+1-555-0205',
+                email: 'robert.johnson@email.com',
+                address: '789 Pine St, City, State 12345',
+                bloodGroup: 'B+',
+                emergencyContact: '+1-555-0206',
+                medicalHistory: 'Allergic to penicillin',
+                registrationDate: new Date().toISOString()
+            }
+        ];
+
+        // Create sample tokens for today
+        const today = new Date();
+        const sampleTokens = [
+            {
+                id: 'TOK001',
+                tokenNumber: 1,
+                patientId: 'PAT001',
+                patientName: 'John Doe',
+                doctorId: 'DOC001',
+                date: today.toISOString(),
+                tokenType: 'Regular',
+                status: 'waiting',
+                notes: 'Regular checkup'
+            },
+            {
+                id: 'TOK002',
+                tokenNumber: 2,
+                patientId: 'PAT002',
+                patientName: 'Jane Smith',
+                doctorId: 'DOC001',
+                date: today.toISOString(),
+                tokenType: 'Regular',
+                status: 'waiting',
+                notes: 'Fever and headache'
+            },
+            {
+                id: 'TOK003',
+                tokenNumber: 3,
+                patientId: 'PAT003',
+                patientName: 'Robert Johnson',
+                doctorId: 'DOC001',
+                date: today.toISOString(),
+                tokenType: 'Emergency',
+                status: 'in-consultation',
+                notes: 'Chest pain'
+            }
+        ];
+
+        // Save sample data
+        this.patients = samplePatients;
+        this.tokens = sampleTokens;
+        localStorage.setItem('clinicPatients', JSON.stringify(this.patients));
+        localStorage.setItem('clinicTokens', JSON.stringify(this.tokens));
+        
+        console.log('Sample data initialized:', {
+            patients: this.patients.length,
+            tokens: this.tokens.length
+        });
+    }
+
     saveData() {
         localStorage.setItem('clinicPrescriptions', JSON.stringify(this.prescriptions));
         localStorage.setItem('clinicTokens', JSON.stringify(this.tokens));
     }
 
     initializeUI() {
+        // Set up navigation first
+        this.setupNavigation();
+        
         this.updatePatientQueue();
         this.updatePatientDropdown();
         this.loadRecentActivities();
     }
 
-    setupEventListeners() {
+    setupNavigation() {
         // Navigation
         const navLinks = document.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
@@ -82,9 +196,58 @@ class DoctorDashboard {
                 e.preventDefault();
                 const tabName = link.dataset.tab;
                 this.switchTab(tabName);
+                
+                // Close mobile menu if open
+                this.closeMobileMenu();
             });
         });
 
+        // Mobile menu toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        
+        if (mobileMenuToggle && sidebar) {
+            mobileMenuToggle.addEventListener('click', () => {
+                const isActive = sidebar.classList.contains('active');
+                
+                if (isActive) {
+                    this.closeMobileMenu();
+                } else {
+                    this.openMobileMenu();
+                }
+            });
+
+            // Close menu when clicking overlay
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    this.closeMobileMenu();
+                });
+            }
+
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.closeMobileMenu();
+                }
+            });
+        }
+    }
+
+    openMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        
+        if (sidebar) {
+            sidebar.classList.add('active');
+        }
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+        document.body.classList.add('menu-open');
+    }
+
+    setupEventListeners() {
         // Prescription form
         const prescriptionForm = document.getElementById('prescriptionForm');
         if (prescriptionForm) {
@@ -99,6 +262,19 @@ class DoctorDashboard {
         if (consultationDate) {
             consultationDate.value = new Date().toISOString().split('T')[0];
         }
+    }
+
+    closeMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        
+        if (sidebar) {
+            sidebar.classList.remove('active');
+        }
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+        document.body.classList.remove('menu-open');
     }
 
     switchTab(tabName) {
