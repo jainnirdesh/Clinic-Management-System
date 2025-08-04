@@ -61,8 +61,8 @@ class DoctorDashboard {
         this.tokens = JSON.parse(localStorage.getItem('clinicTokens') || '[]');
         this.prescriptions = JSON.parse(localStorage.getItem('clinicPrescriptions') || '[]');
         
-        // Initialize sample data if no data exists
-        if (this.patients.length === 0) {
+        // Initialize sample data if no data exists (but don't overwrite existing data)
+        if (this.patients.length === 0 && this.tokens.length === 0) {
             this.initializeSampleData();
         }
         
@@ -70,6 +70,18 @@ class DoctorDashboard {
         console.log('Doctor Dashboard - Loaded data:', {
             patients: this.patients.length,
             tokens: this.tokens.length,
+            patientsDetails: this.patients.map(p => ({
+                id: p.id,
+                name: `${p.firstName} ${p.lastName}`,
+                registrationDate: p.registrationDate
+            })),
+            tokensDetails: this.tokens.map(t => ({
+                id: t.id,
+                doctorId: t.doctorId,
+                patientName: t.patientName,
+                date: t.date,
+                status: t.status
+            })),
             currentUser: this.currentUser
         });
         
@@ -186,6 +198,7 @@ class DoctorDashboard {
         this.updatePatientQueue();
         this.updatePatientDropdown();
         this.loadRecentActivities();
+        this.updateAllPatientsList();
     }
 
     setupNavigation() {
@@ -289,9 +302,12 @@ class DoctorDashboard {
         // Update content based on tab
         switch(tabName) {
             case 'patients':
+                this.loadData(); // Refresh data before updating queue
                 this.updatePatientQueue();
+                this.updateAllPatientsList();
                 break;
             case 'prescriptions':
+                this.loadData(); // Refresh data before updating dropdown
                 this.updatePatientDropdown();
                 break;
             case 'history':
@@ -345,6 +361,9 @@ class DoctorDashboard {
         const queueContainer = document.getElementById('patientsQueue');
         const queueCount = document.getElementById('queueCount');
         
+        // Reload data from localStorage to ensure we have the latest data
+        this.loadData();
+        
         // Get today's tokens assigned to this doctor
         const today = new Date().toDateString();
         const doctorTokens = this.tokens.filter(token => 
@@ -352,18 +371,33 @@ class DoctorDashboard {
             new Date(token.date).toDateString() === today
         ).sort((a, b) => a.tokenNumber - b.tokenNumber);
         
-        // Debug logging
+        // Enhanced debug logging
         console.log('Doctor Dashboard - updatePatientQueue:', {
             today: today,
             currentDoctorId: this.currentUser.doctorId,
             allTokens: this.tokens.length,
+            allTokensDetails: this.tokens.map(t => ({
+                id: t.id,
+                doctorId: t.doctorId,
+                tokenNumber: t.tokenNumber,
+                patientName: t.patientName,
+                date: new Date(t.date).toDateString(),
+                status: t.status
+            })),
             doctorTokens: doctorTokens.length,
             doctorTokensDetails: doctorTokens.map(t => ({
                 id: t.id,
                 doctorId: t.doctorId,
                 tokenNumber: t.tokenNumber,
-                date: t.date,
+                patientName: t.patientName,
+                date: new Date(t.date).toDateString(),
                 status: t.status
+            })),
+            allPatients: this.patients.length,
+            patientsDetails: this.patients.map(p => ({
+                id: p.id,
+                name: `${p.firstName} ${p.lastName}`,
+                registrationDate: p.registrationDate
             }))
         });
         
@@ -371,7 +405,28 @@ class DoctorDashboard {
         queueContainer.innerHTML = '';
         
         if (doctorTokens.length === 0) {
-            queueContainer.innerHTML = '<div class="no-patients">No patients in queue today</div>';
+            // Check if there are any patients registered today who don't have tokens yet
+            const today = new Date().toDateString();
+            const todaysPatients = this.patients.filter(patient => 
+                new Date(patient.registrationDate).toDateString() === today
+            );
+            
+            if (todaysPatients.length > 0) {
+                queueContainer.innerHTML = `
+                    <div class="no-patients">
+                        <p>No tokens generated for today yet</p>
+                        <p><strong>${todaysPatients.length}</strong> patient(s) registered today:</p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            ${todaysPatients.map(p => `<li>${p.firstName} ${p.lastName} (${p.phone})</li>`).join('')}
+                        </ul>
+                        <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                            Note: Tokens need to be generated by the receptionist for patients to appear in the queue.
+                        </p>
+                    </div>
+                `;
+            } else {
+                queueContainer.innerHTML = '<div class="no-patients">No patients in queue today</div>';
+            }
             return;
         }
         
@@ -409,30 +464,52 @@ class DoctorDashboard {
         const patientSelect = document.getElementById('patientSelect');
         patientSelect.innerHTML = '<option value="">Select a patient...</option>';
         
-        // Get today's tokens assigned to this doctor
+        // Get today's tokens assigned to this doctor (for priority)
         const today = new Date().toDateString();
         const doctorTokens = this.tokens.filter(token => 
             token.doctorId === this.currentUser.doctorId &&
             new Date(token.date).toDateString() === today
         );
         
+        // Add patients with tokens first (priority patients)
+        const patientsWithTokens = [];
         doctorTokens.forEach(token => {
             const patient = this.patients.find(p => p.id === token.patientId);
-            if (patient) {
+            if (patient && !patientsWithTokens.find(p => p.id === patient.id)) {
+                patientsWithTokens.push(patient);
                 const option = document.createElement('option');
                 option.value = patient.id;
-                option.textContent = `${patient.firstName} ${patient.lastName} - Token #${token.tokenNumber}`;
+                option.textContent = `🎫 ${patient.firstName} ${patient.lastName} - Token #${token.tokenNumber} (Today)`;
+                patientSelect.appendChild(option);
+            }
+        });
+        
+        // Add a separator if there are patients with tokens
+        if (patientsWithTokens.length > 0) {
+            const separator = document.createElement('option');
+            separator.disabled = true;
+            separator.textContent = '--- Other Registered Patients ---';
+            patientSelect.appendChild(separator);
+        }
+        
+        // Add all other patients (for consultation history or future prescriptions)
+        this.patients.forEach(patient => {
+            // Skip if already added with token
+            if (!patientsWithTokens.find(p => p.id === patient.id)) {
+                const option = document.createElement('option');
+                option.value = patient.id;
+                option.textContent = `${patient.firstName} ${patient.lastName} (${patient.phone})`;
                 patientSelect.appendChild(option);
             }
         });
     }
 
-    viewPatientDetails(patientId, tokenId) {
+    viewPatientDetails(patientId, tokenId = '') {
         const patient = this.patients.find(p => p.id === patientId);
-        const token = this.tokens.find(t => t.id === tokenId);
+        const token = tokenId ? this.tokens.find(t => t.id === tokenId) : null;
         
-        if (!patient || !token) {
-            this.showNotification('Patient or token not found', 'error');
+        if (!patient) {
+            this.showNotification('Patient not found', 'error');
             return;
         }
         
@@ -462,10 +539,34 @@ class DoctorDashboard {
                     <strong>Medical History:</strong> ${patient.medicalHistory || 'None'}
                 </div>
                 <div class="detail-full">
-                    <strong>Token Type:</strong> ${token.tokenType}
+                    <strong>Registration Date:</strong> ${new Date(patient.registrationDate).toLocaleDateString()}
                 </div>
-                ${token.notes ? `<div class="detail-full"><strong>Notes:</strong> ${token.notes}</div>` : ''}
+                ${token ? `
+                    <div class="detail-full">
+                        <strong>Token Type:</strong> ${token.tokenType}
+                    </div>
+                    ${token.notes ? `<div class="detail-full"><strong>Token Notes:</strong> ${token.notes}</div>` : ''}
+                    <div class="detail-full">
+                        <strong>Token Status:</strong> <span class="status-badge ${token.status}">${token.status.toUpperCase()}</span>
+                    </div>
+                ` : `
+                    <div class="detail-full">
+                        <strong>Status:</strong> <span class="status-badge no-token">No token for today</span>
+                    </div>
+                `}
             </div>
+        `;
+        
+        // Update modal footer based on whether patient has a token
+        const modalFooter = document.querySelector('#patientModal .modal-footer');
+        modalFooter.innerHTML = `
+            ${token && token.status === 'waiting' ? 
+                '<button class="btn btn-primary" onclick="startConsultation()">Start Consultation</button>' : 
+                token ? 
+                    `<button class="btn btn-info" disabled>Status: ${token.status.toUpperCase()}</button>` :
+                    '<button class="btn btn-warning" disabled>No Token Available</button>'
+            }
+            <button class="btn btn-secondary" onclick="closeModal()">Close</button>
         `;
         
         document.getElementById('patientModal').style.display = 'block';
@@ -702,6 +803,74 @@ class DoctorDashboard {
             }
         }, 5000);
     }
+
+    updateAllPatientsList() {
+        const allPatientsContainer = document.getElementById('allPatientsList');
+        const allPatientsCount = document.getElementById('allPatientsCount');
+        
+        allPatientsCount.textContent = this.patients.length;
+        allPatientsContainer.innerHTML = '';
+        
+        if (this.patients.length === 0) {
+            allPatientsContainer.innerHTML = '<div class="no-patients">No patients registered</div>';
+            return;
+        }
+        
+        // Sort patients by registration date (newest first)
+        const sortedPatients = [...this.patients].sort((a, b) => 
+            new Date(b.registrationDate) - new Date(a.registrationDate)
+        );
+        
+        sortedPatients.forEach(patient => {
+            const registrationDate = new Date(patient.registrationDate);
+            const isToday = registrationDate.toDateString() === new Date().toDateString();
+            
+            // Check if patient has a token today
+            const todayToken = this.tokens.find(token => 
+                token.patientId === patient.id &&
+                new Date(token.date).toDateString() === new Date().toDateString()
+            );
+            
+            const patientCard = document.createElement('div');
+            patientCard.className = `patient-card ${isToday ? 'today' : 'previous'}`;
+            patientCard.innerHTML = `
+                <div class="patient-info">
+                    <h3>${patient.firstName} ${patient.lastName}</h3>
+                    <p><strong>Age:</strong> ${patient.age} | <strong>Gender:</strong> ${patient.gender}</p>
+                    <p><strong>Phone:</strong> ${patient.phone}</p>
+                    <p><strong>Email:</strong> ${patient.email}</p>
+                    <p><strong>Blood Group:</strong> ${patient.bloodGroup}</p>
+                    <p><strong>Registered:</strong> ${registrationDate.toLocaleDateString()} ${isToday ? '(Today)' : ''}</p>
+                    ${patient.medicalHistory ? `<p><strong>Medical History:</strong> ${patient.medicalHistory}</p>` : ''}
+                    ${todayToken ? 
+                        `<p><strong>Today's Token:</strong> <span class="status-badge ${todayToken.status}">#${todayToken.tokenNumber} - ${todayToken.status.toUpperCase()}</span></p>` : 
+                        '<p><strong>Status:</strong> <span class="status-badge no-token">No token today</span></p>'
+                    }
+                </div>
+                <div class="patient-actions">
+                    <button class="btn btn-primary" onclick="doctorDashboard.viewPatientDetails('${patient.id}', '${todayToken ? todayToken.id : ''}')">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                    ${!todayToken ? 
+                        `<button class="btn btn-secondary" onclick="doctorDashboard.showTokenRequired('${patient.id}')">
+                            <i class="fas fa-ticket-alt"></i> Token Required
+                        </button>` : ''
+                    }
+                </div>
+            `;
+            allPatientsContainer.appendChild(patientCard);
+        });
+    }
+
+    showTokenRequired(patientId) {
+        const patient = this.patients.find(p => p.id === patientId);
+        if (patient) {
+            this.showNotification(
+                `${patient.firstName} ${patient.lastName} needs a token from the receptionist to be added to the queue`, 
+                'info'
+            );
+        }
+    }
 }
 
 // Global functions for HTML onclick events
@@ -710,9 +879,11 @@ function switchTab(tabName) {
 }
 
 function refreshQueue() {
+    doctorDashboard.loadData(); // Reload all data from localStorage
     doctorDashboard.updatePatientQueue();
+    doctorDashboard.updateAllPatientsList();
     doctorDashboard.updateDashboardStats();
-    doctorDashboard.showNotification('Queue refreshed', 'success');
+    doctorDashboard.showNotification('Queue refreshed - Data reloaded from storage', 'success');
 }
 
 function addMedicine() {
@@ -764,6 +935,8 @@ function startConsultation() {
     if (doctorDashboard.currentToken) {
         doctorDashboard.startConsultation(doctorDashboard.currentToken.id);
         closeModal();
+    } else {
+        doctorDashboard.showNotification('No active token found for this patient', 'error');
     }
 }
 

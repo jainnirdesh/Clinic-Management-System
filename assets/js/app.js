@@ -75,20 +75,20 @@ function initializeTabs() {
 
 // Initialize statistics
 function initializeStats() {
-    // Load data from localStorage or Firebase
-    const patients = JSON.parse(localStorage.getItem('patients')) || [];
-    const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+    // Load data from localStorage using correct keys
+    const patients = JSON.parse(localStorage.getItem('clinicPatients') || '[]');
+    const tokens = JSON.parse(localStorage.getItem('clinicTokens') || '[]');
     
     // Update stats
     document.getElementById('totalPatients').textContent = patients.length;
-    document.getElementById('todayAppointments').textContent = getTodayAppointments(appointments);
+    document.getElementById('todayAppointments').textContent = getTodayTokens(tokens);
 }
 
-// Get today's appointments count
-function getTodayAppointments(appointments) {
+// Get today's tokens count
+function getTodayTokens(tokens) {
     const today = new Date().toDateString();
-    return appointments.filter(appointment => 
-        new Date(appointment.date).toDateString() === today
+    return tokens.filter(token => 
+        new Date(token.date).toDateString() === today
     ).length;
 }
 

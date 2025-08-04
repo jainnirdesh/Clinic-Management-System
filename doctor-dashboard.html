@@ -19,7 +19,6 @@
         
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-            <div class="sidebar-header">
                 <div class="logo">
                     <i class="fas fa-clinic-medical"></i>
                     <h2>HealthCare</h2>
@@ -135,6 +134,17 @@
                     
                     <div id="patientsQueue" class="patients-list">
                         <!-- Patient cards will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="queue-container" style="margin-top: 20px;">
+                    <div class="queue-header">
+                        <h2>All Registered Patients</h2>
+                        <span class="queue-count">Total: <span id="allPatientsCount">0</span></span>
+                    </div>
+                    
+                    <div id="allPatientsList" class="patients-list">
+                        <!-- All patients will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -284,11 +294,7 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
-    
+    <!-- Scripts -->
     <script src="assets/js/doctor-dashboard.js"></script>
     <script src="assets/js/auth.js"></script>
 </body>
